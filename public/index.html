@@ -109,10 +109,12 @@
     border:2px solid transparent; background:#fff; margin-bottom:12px; cursor:pointer;
   }
   .hogar-row.activo{ border-color:#1c3a5c; }
-  .hogar-icon{ font-size:1.6rem; width:48px; height:48px; border-radius:12px; background:#eef1f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .hogar-icon{ font-size:1.5rem; width:44px; height:44px; border-radius:50%; background:#eef1f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .hogar-info{ flex:1; min-width:0; }
-  .hogar-info .nombre{ font-size:1.05rem; font-weight:600; }
-  .hogar-info .meta{ color:var(--muted); font-size:0.85rem; margin-top:2px; }
+  .hogar-info .nombre{ font-size:1.05rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hogar-info .meta{ color:var(--muted); font-size:0.85rem; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hogar-actions{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .icon-btn{ width:30px; height:30px; border-radius:50%; border:1px solid var(--border); background:var(--pill-bg); display:flex; align-items:center; justify-content:center; font-size:0.85rem; cursor:pointer; flex-shrink:0; padding:0; }
   .badge-activo{ background:var(--blue-badge-bg); color:var(--blue-badge-ink); font-size:0.78rem; font-weight:600; padding:6px 12px; border-radius:999px; white-space:nowrap; }
   .chevron{ color:var(--muted); font-size:1.1rem; }
 
@@ -685,8 +687,10 @@ function screenSelectorHogares(){
         <div class="meta">${h.serviciosCount} suscripción${h.serviciosCount===1?'':'es'}</div>
       </div>
       ${esDueno ? `
-        <button class="btn-outline small" onclick="event.stopPropagation(); renombrarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')" title="Renombrar hogar">✏️</button>
-        <button class="btn-outline small" style="color:var(--red-ink);" onclick="event.stopPropagation(); eliminarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')" title="Eliminar hogar">🗑</button>
+      <div class="hogar-actions">
+        <button class="icon-btn" onclick="event.stopPropagation(); renombrarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')" title="Renombrar hogar">✏️</button>
+        <button class="icon-btn" style="color:var(--red-ink);" onclick="event.stopPropagation(); eliminarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')" title="Eliminar hogar">🗑</button>
+      </div>
       ` : ''}
       ${state.hogarActivo && state.hogarActivo.id===h.id ? '<span class="badge-activo">Activo</span>' : '<span class="chevron">›</span>'}
     </div>
