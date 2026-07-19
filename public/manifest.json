@@ -1,6 +1,6 @@
 {
-  "name": "Pagos del Hogar - Veolia Sabana",
-  "short_name": "Pagos del Hogar",
+  "name": "Veolia Sabana",
+  "short_name": "Veolia Sabana",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f4f2ee",
