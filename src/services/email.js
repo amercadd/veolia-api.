@@ -2,7 +2,7 @@ const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const VEOLIA_LOGO_URL = 'https://www.sabana.veolia.co/themes/custom/veo_site/build/assets/images/logo.png';
+const VEOLIA_LOGO_URL = 'https://www.sabana.veolia.co/favicon.ico';
 
 let logoBase64Cache = null;
 async function obtenerLogoAdjunto() {

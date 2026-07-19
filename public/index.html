@@ -243,7 +243,7 @@
 
 <script>
 const API = '';
-const VEOLIA_LOGO = 'https://www.sabana.veolia.co/themes/custom/veo_site/build/assets/images/logo.png';
+const VEOLIA_LOGO = '/icon-192.png';
 const veoliaBrandHtml = `<div class="veolia-brand"><img src="${VEOLIA_LOGO}" alt="Veolia Sabana" onerror="this.style.display='none'"><div class="bar"></div></div>`;
 const TIPOS = ['LUZ','AGUA','GAS','INTERNET','CELULAR'];
 const TIPO_LABEL = { LUZ:'Luz', AGUA:'Agua', GAS:'Gas', INTERNET:'Internet hogar', CELULAR:'Celular' };
@@ -873,7 +873,7 @@ function screenAgregarServicio(err, loading, prefill){
     <h1 class="title">Agregar suscripción</h1>
     <p class="subtitle">Acueducto Veolia Sabana</p>
     <label>Número suscriptor (parte superior derecha de su recibo)</label>
-    <input type="text" id="f-serv-numero" placeholder="21513336" value="${escapeHtml(p.numeroCuenta || '')}" ${loading?'disabled':''}>
+    <input type="text" id="f-serv-numero" placeholder="21000000" value="${escapeHtml(p.numeroCuenta || '')}" ${loading?'disabled':''}>
     <label>Alias (opcional)</label>
     <input type="text" id="f-serv-alias" placeholder="Agua casa" value="${escapeHtml(p.alias || '')}" ${loading?'disabled':''}>
     <div class="checkbox-row">
