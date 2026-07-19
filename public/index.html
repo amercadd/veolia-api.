@@ -337,17 +337,29 @@ async function api(path, opts = {}) {
   return body;
 }
 
+// La navegación empuja entradas reales al historial del navegador
+// (history.pushState) para que el botón físico "atrás" del celular (que en
+// una TWA de Android simplemente hace ir atrás en el historial web) navegue
+// igual que el botón "‹ Atrás" de la app, en vez de cerrarla de una.
 function goto(screen, push = true){
-  if (push) state.history.push(state.screen);
+  if (push) {
+    state.history.push(state.screen);
+    history.pushState({ appNav: true }, '', location.pathname + location.search);
+  } else {
+    history.replaceState({ appNav: true }, '', location.pathname + location.search);
+  }
   state.screen = screen;
   render();
   window.scrollTo(0,0);
 }
 function back(){
-  const prev = state.history.pop();
-  state.screen = prev || 'registro';
-  render();
+  if (state.history.length) history.back();
 }
+window.addEventListener('popstate', () => {
+  if (!state.history.length) return;
+  state.screen = state.history.pop();
+  render();
+});
 
 function backLink(label = '‹ Atrás'){
   return state.history.length ? `<div class="topline"><button class="back-link" onclick="back()">${label}</button><div></div></div>` : `<div class="topline"></div>`;
@@ -712,7 +724,7 @@ async function doCrearHogar(){
   }catch(e){ render(screenCrearHogar(e.message)); }
 }
 
-async function abrirHogar(id){
+async function abrirHogar(id, push = true){
   const hogar = await api(`/api/hogares/${id}`);
   state.hogarActivo = hogar;
   const cuentas = await api(`/api/cuentas/hogares/${id}`);
@@ -729,8 +741,7 @@ async function abrirHogar(id){
   });
 
   state.pendientes = cuentas;
-  goto('home', false);
-  state.history = [];
+  goto('home', push);
 }
 
 /* ---------- HOME ---------- */
@@ -759,6 +770,7 @@ function screenHome(){
     </div>`;
   }).join('');
   return `
+  ${backLink('‹ Mis hogares')}
   <div class="card">
     ${veoliaBrandHtml}
     <div class="home-header">
@@ -867,7 +879,7 @@ async function eliminarServicioHogar(cuentaId){
   try {
     await api(`/api/cuentas/${cuentaId}`, { method: 'DELETE' });
     toast('Servicio eliminado');
-    await abrirHogar(state.hogarActivo.id);
+    await abrirHogar(state.hogarActivo.id, false);
   } catch (e) {
     toast(e.message);
   }
@@ -932,7 +944,7 @@ async function doAgregarServicio(){
     const { pdfBase64, ...facturaDatos } = factura;
     const cuenta = await api(`/api/cuentas/hogares/${state.hogarActivo.id}`, { method:'POST', body: JSON.stringify({ tipo, empresa, numeroCuenta, alias, pagoAutomatico, facturaVeolia: facturaDatos }) });
     toast('Suscripción agregada');
-    await abrirHogar(state.hogarActivo.id);
+    await abrirHogar(state.hogarActivo.id, false);
     state.facturaVeolia = { cuenta, factura };
     goto('facturaVeolia', false);
   }catch(e){
