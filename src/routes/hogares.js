@@ -123,6 +123,24 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const rol = await rolDeUsuarioEnHogar(req.params.id, req.usuario.id);
+    if (rol !== 'DUENO') throw new ApiError(403, 'Solo el dueño puede renombrar el hogar');
+
+    const { nombre } = req.body;
+    if (!nombre || !nombre.trim()) throw new ApiError(400, 'El nombre del hogar es obligatorio');
+
+    const hogar = await prisma.hogar.update({
+      where: { id: req.params.id },
+      data: { nombre: nombre.trim() },
+    });
+    res.json(hogar);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Invita por correo o celular: si la persona ya tiene cuenta le llega la
 // invitación para aceptar; si no, le llega un mensaje con el link de la app
 // para que se registre con ese mismo correo/celular y ahí vea la invitación.

@@ -595,6 +595,24 @@ async function rechazarInvitacion(invId){
     await abrirSelectorHogares();
   }catch(e){ toast(e.message); }
 }
+async function renombrarHogar(id, nombreActual){
+  const nuevo = prompt('Nuevo nombre del hogar', nombreActual);
+  if (!nuevo || !nuevo.trim() || nuevo.trim() === nombreActual) return;
+  try{
+    await api(`/api/hogares/${id}`, { method:'PATCH', body: JSON.stringify({ nombre: nuevo.trim() }) });
+    toast('Hogar renombrado');
+    await abrirSelectorHogares();
+  }catch(e){ toast(e.message); }
+}
+async function eliminarHogar(id, nombre){
+  if (!confirm(`¿Eliminar el hogar "${nombre}"? Esta acción no se puede deshacer y borrará todas sus suscripciones y miembros.`)) return;
+  try{
+    await api(`/api/hogares/${id}`, { method:'DELETE' });
+    toast('Hogar eliminado');
+    if (state.hogarActivo && state.hogarActivo.id === id) state.hogarActivo = null;
+    await abrirSelectorHogares();
+  }catch(e){ toast(e.message); }
+}
 
 // Al iniciar sesión (o al restaurar la sesión guardada), refrescamos en
 // segundo plano el valor real de cada suscripción de Veolia consultando su
@@ -645,16 +663,23 @@ function screenSelectorHogares(){
       </div>
     </div>
   `).join('');
-  const rows = state.hogares.map(h => `
+  const rows = state.hogares.map(h => {
+    const esDueno = (h.miembros || []).some(m => m.usuarioId === state.usuario.id && m.rol === 'DUENO');
+    return `
     <div class="hogar-row ${state.hogarActivo && state.hogarActivo.id===h.id ? 'activo':''}" onclick="abrirHogar('${h.id}')">
       <div class="hogar-icon">🏠</div>
       <div class="hogar-info">
         <div class="nombre">${escapeHtml(h.nombre)}</div>
         <div class="meta">${h.serviciosCount} suscripción${h.serviciosCount===1?'':'es'}</div>
       </div>
+      ${esDueno ? `
+        <button class="btn-outline small" onclick="event.stopPropagation(); renombrarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')" title="Renombrar hogar">✏️</button>
+        <button class="btn-outline small" style="color:var(--red-ink);" onclick="event.stopPropagation(); eliminarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')" title="Eliminar hogar">🗑</button>
+      ` : ''}
       ${state.hogarActivo && state.hogarActivo.id===h.id ? '<span class="badge-activo">Activo</span>' : '<span class="chevron">›</span>'}
     </div>
-  `).join('');
+  `;
+  }).join('');
   return `
   ${backLink('')}
   ${invitaciones.length ? `<div class="card"><h1 class="title" style="margin-bottom:18px;">Invitaciones pendientes</h1>${invitacionesHtml}</div>` : ''}
