@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.onrender.veolia_api.twa",
+        "sha256_cert_fingerprints": ["F1:6E:98:26:BD:39:79:AC:1D:D2:D2:9E:D1:52:F9:1D:5A:43:1B:E3:0D:60:C3:BD:41:21:4E:52:C6:91:53:2B"]
+      }
+    }]
