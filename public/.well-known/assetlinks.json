@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "com.onrender.veolia_api.twa",
-        "sha256_cert_fingerprints": ["F1:6E:98:26:BD:39:79:AC:1D:D2:D2:9E:D1:52:F9:1D:5A:43:1B:E3:0D:60:C3:BD:41:21:4E:52:C6:91:53:2B"]
+        "sha256_cert_fingerprints": ["3F:3E:58:C4:3F:EB:B2:E7:C7:01:9A:DE:34:B7:77:27:BD:35:64:D8:D1:87:19:A9:2B:F1:C3:66:8D:E7:F8:CA"]
       }
     }]
