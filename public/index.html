@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pagos del Hogar</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ed1c24">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<style>
+  :root{
+    --bg:#eeebe4;
+    --card:#ffffff;
+    --ink:#27384a;
+    --muted:#8b93a1;
+    --border:#e7e3da;
+    --pill-bg:#f4f2ee;
+    --blue-badge-bg:#dbe9fb;
+    --blue-badge-ink:#1c4e8a;
+    --blue-accent:#2f6fed;
+    --black:#15171b;
+    --green-ok-bg:#e1f3e5;
+    --green-ok-ink:#1f8a3d;
+    --red-ink:#c23b3b;
+    --veolia-red:#ed1c24;
+    --veolia-red-bg:#fde2e2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  #phone{
+    max-width:460px;
+    margin:0 auto;
+    min-height:100vh;
+    padding:22px 16px 60px;
+  }
+  .topline{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:10px;
+    min-height:28px;
+  }
+  .back-link{
+    color:var(--muted);
+    font-size:0.9rem;
+    cursor:pointer;
+    user-select:none;
+    background:none;border:none;
+    padding:4px 0;
+  }
+  .back-link:hover{ color:var(--ink); }
+  .card{
+    background:var(--card);
+    border-radius:20px;
+    padding:26px 24px 28px;
+    box-shadow:0 1px 3px rgba(20,20,20,0.05);
+    margin-bottom:16px;
+  }
+  .veolia-brand{ display:flex; flex-direction:column; align-items:center; margin-bottom:18px; }
+  .veolia-brand img{ height:30px; }
+  .veolia-brand .bar{ width:36px; height:3px; background:var(--veolia-red); border-radius:999px; margin-top:10px; }
+  h1.title{ font-size:1.35rem; font-weight:600; margin:0 0 4px; color:var(--ink); }
+  p.subtitle{ color:var(--muted); margin:0 0 20px; font-size:0.92rem; }
+  label{ display:block; font-size:0.82rem; color:var(--muted); margin:14px 0 6px; }
+  input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=tel],select,textarea{
+    width:100%; padding:12px 14px; font-size:0.95rem; border:1px solid var(--border);
+    border-radius:12px; background:#fff; color:var(--ink); font-family:inherit;
+  }
+  input:focus,select:focus{ outline:2px solid var(--blue-accent); outline-offset:1px; }
+  input:disabled{ background:var(--pill-bg); color:var(--muted); }
+  .pw-wrap{ position:relative; }
+  .pw-wrap input{ padding-right:44px; }
+  .pw-eye{
+    position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:none;
+    cursor:pointer; font-size:1.05rem; padding:6px 8px; line-height:1; color:var(--muted);
+  }
+  .btn-black{
+    display:block; width:100%; padding:14px; margin-top:20px; border:none; border-radius:999px;
+    background:var(--black); color:#fff; font-size:1rem; font-weight:500; cursor:pointer; text-align:center;
+  }
+  .btn-black:disabled{ opacity:0.45; cursor:default; }
+  .btn-black:hover:not(:disabled){ background:#000; }
+  .btn-outline{
+    display:inline-block; padding:12px 18px; border-radius:999px; background:var(--pill-bg);
+    border:1px solid var(--border); color:var(--ink); font-size:0.92rem; cursor:pointer; text-align:center;
+  }
+  .btn-outline:hover{ background:#eae7e0; }
+  .btn-outline.full{ display:block; width:100%; }
+  .btn-outline.small{ padding:8px 14px; font-size:0.82rem; }
+  .btn-link{ background:none;border:none;color:var(--blue-accent);cursor:pointer;font-size:0.88rem;padding:0; }
+  .foot-note{ text-align:center; color:var(--muted); font-size:0.8rem; margin-top:16px; }
+  .error-box{ background:#fdecec; color:var(--red-ink); border-radius:10px; padding:10px 14px; font-size:0.85rem; margin-top:14px; }
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:#15171b; color:#fff; padding:10px 20px; border-radius:999px; font-size:0.85rem;
+    box-shadow:0 4px 14px rgba(0,0,0,0.2); z-index:50;
+  }
+
+  /* selector hogares */
+  .hogar-row{
+    display:flex; align-items:center; gap:14px; padding:16px; border-radius:16px;
+    border:2px solid transparent; background:#fff; margin-bottom:12px; cursor:pointer;
+  }
+  .hogar-row.activo{ border-color:#1c3a5c; }
+  .hogar-icon{ font-size:1.6rem; width:48px; height:48px; border-radius:12px; background:#eef1f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .hogar-info{ flex:1; min-width:0; }
+  .hogar-info .nombre{ font-size:1.05rem; font-weight:600; }
+  .hogar-info .meta{ color:var(--muted); font-size:0.85rem; margin-top:2px; }
+  .badge-activo{ background:var(--blue-badge-bg); color:var(--blue-badge-ink); font-size:0.78rem; font-weight:600; padding:6px 12px; border-radius:999px; white-space:nowrap; }
+  .chevron{ color:var(--muted); font-size:1.1rem; }
+
+  /* home */
+  .home-header{ display:flex; align-items:flex-start; justify-content:space-between; }
+  .home-header .label{ color:var(--muted); font-size:0.85rem; }
+  .home-header .nombre{ font-size:1.2rem; font-weight:600; cursor:pointer; }
+  .bell{ width:44px;height:44px;border-radius:50%; background:var(--blue-badge-bg); display:flex; align-items:center; justify-content:center; font-size:1.2rem; cursor:pointer; flex-shrink:0; border:none; }
+  .total-box{ background:#f5f3ee; border-radius:16px; padding:18px 20px; margin-top:16px; }
+  .total-box .lbl{ color:var(--muted); font-size:0.88rem; }
+  .total-box .val{ font-size:2rem; font-weight:600; margin-top:4px; }
+  .total-box .warn{ color:#a9711a; font-size:0.85rem; margin-top:10px; }
+  .venc-title{ font-weight:600; margin:22px 0 8px; }
+  .venc-row{ display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+  .venc-row:last-of-type{ border-bottom:none; }
+  .icon-circle{ width:42px;height:42px;border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.15rem; flex-shrink:0; }
+  .venc-info{ flex:1; min-width:0; }
+  .venc-info .nom{ font-weight:600; font-size:0.95rem; }
+  .venc-info .sub{ color:var(--muted); font-size:0.8rem; margin-top:2px; }
+  .nav-grid{ display:flex; justify-content:space-between; margin-top:22px; }
+  .nav-item{ display:flex; flex-direction:column; align-items:center; gap:6px; background:none; border:none; cursor:pointer; color:var(--ink); flex:1; }
+  .nav-item .ic{ width:52px;height:52px;border-radius:14px; background:var(--pill-bg); display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
+  .nav-item span{ font-size:0.78rem; color:var(--muted); }
+
+  /* historial */
+  .tabs{ display:flex; gap:18px; border-bottom:1px solid var(--border); margin-bottom:18px; overflow-x:auto; }
+  .tab{ background:none; border:none; padding:8px 2px 12px; color:var(--muted); font-size:0.95rem; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; }
+  .tab.active{ color:var(--blue-accent); border-bottom-color:var(--blue-accent); font-weight:600; }
+  .stat-row{ display:flex; gap:10px; margin-bottom:22px; }
+  .stat-box{ flex:1; background:#f5f3ee; border-radius:14px; padding:12px 14px; }
+  .stat-box .lbl{ color:var(--muted); font-size:0.76rem; }
+  .stat-box .val{ font-size:1.15rem; font-weight:600; margin-top:2px; }
+  .chart-wrap{ margin-bottom:22px; }
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:0.78rem; color:var(--ink); margin-bottom:14px; }
+  .legend .dot{ display:inline-block; width:9px;height:9px;border-radius:50%; margin-right:5px; }
+  .chart-area{ display:flex; align-items:flex-end; gap:10px; height:200px; border-bottom:1px solid var(--border); padding-bottom:2px; }
+  .bar-col{ flex:1; position:relative; height:100%; }
+  .bar-fill{ position:absolute; bottom:0; left:0; right:0; border-radius:6px 6px 0 0; }
+  .bar-value{ position:absolute; bottom:calc(100% + 4px); left:-4px; right:-4px; text-align:center; font-size:0.66rem; color:var(--ink); white-space:nowrap; }
+  .bar-labels{ display:flex; gap:10px; margin-top:6px; }
+  .bar-labels span{ flex:1; text-align:center; font-size:0.75rem; color:var(--muted); }
+  .hist-tabla{ margin-top:16px; border-top:1px solid var(--border); padding-top:6px; }
+  .hist-tabla-fila{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:0.85rem; }
+  .hist-tabla-fila:last-child{ border-bottom:none; }
+  .hist-tabla-fila span:last-child{ font-weight:600; }
+  .hist-title{ font-weight:600; margin:6px 0 6px; }
+  .hist-row{ display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+  .hist-row:last-child{ border-bottom:none; }
+  .hist-info{ flex:1; }
+  .hist-info .nom{ font-weight:500; font-size:0.92rem; }
+  .hist-info .fecha{ color:var(--muted); font-size:0.78rem; margin-top:2px; }
+  .hist-monto{ font-weight:600; }
+
+  /* metodos pago / miembros */
+  .list-card{ background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; display:flex; align-items:center; gap:14px; }
+  .avatar{ width:44px;height:44px;border-radius:50%; background:var(--blue-badge-bg); color:var(--blue-badge-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.85rem; flex-shrink:0; }
+  .rol-tag{ color:var(--muted); font-size:0.85rem; white-space:nowrap; }
+  .dots-btn{ background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 8px; }
+  .popover{ position:relative; }
+  .popover-menu{ position:absolute; right:0; top:32px; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,0.1); z-index:5; min-width:190px; overflow:hidden; }
+  .popover-menu button{ display:block; width:100%; text-align:left; padding:10px 14px; background:none; border:none; font-size:0.85rem; cursor:pointer; color:var(--ink); }
+  .popover-menu button:hover{ background:#f5f3ee; }
+  .popover-menu button.danger{ color:var(--red-ink); }
+
+  /* confirmar pago / comprobante */
+  .resumen-box{ background:#f5f3ee; border-radius:14px; padding:16px 18px; margin-bottom:6px; }
+  .resumen-top{ display:flex; align-items:center; gap:14px; padding-bottom:12px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+  .resumen-top .nom{ font-weight:600; }
+  .resumen-top .sub{ color:var(--muted); font-size:0.82rem; margin-top:2px; }
+  .kv-row{ display:flex; justify-content:space-between; font-size:0.9rem; }
+  .monto-grande{ font-size:2.2rem; font-weight:600; margin:4px 0 18px; }
+  .metodo-radio{ display:flex; align-items:center; gap:12px; padding:14px; border:1px solid var(--border); border-radius:12px; margin-bottom:10px; cursor:pointer; }
+  .metodo-radio.selected{ border-color:var(--blue-accent); background:#f5f8ff; }
+  .metodo-radio input{ width:auto; }
+  .empresa-card{ display:flex; align-items:center; gap:12px; padding:14px; border:1px solid var(--border); border-radius:12px; margin-bottom:10px; cursor:pointer; }
+  .empresa-card.selected{ border-color:var(--blue-accent); background:#f5f8ff; }
+  .empresa-logo{ width:26px; height:26px; object-fit:contain; border-radius:5px; background:#fff; flex-shrink:0; }
+
+  .receipt-check{ width:74px;height:74px;border-radius:50%; background:var(--green-ok-bg); color:var(--green-ok-ink); font-size:2rem; display:flex; align-items:center; justify-content:center; margin:8px auto 18px; }
+  .receipt-title{ text-align:center; font-size:1.15rem; font-weight:600; }
+  .receipt-sub{ text-align:center; color:var(--muted); margin-top:4px; }
+  .receipt-monto{ text-align:center; font-size:2.1rem; font-weight:600; margin:16px 0; }
+  .receipt-kv{ display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:0.9rem; }
+  .receipt-kv:last-child{ border-bottom:none; }
+  .receipt-box{ background:#f5f3ee; border-radius:14px; padding:6px 16px; margin-bottom:18px; }
+  .two-col{ display:flex; gap:10px; }
+  .two-col .btn-outline{ flex:1; }
+
+  .pdf-modal-backdrop{ position:fixed; inset:0; background:rgba(20,20,20,0.65); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .pdf-modal{ background:#fff; border-radius:14px; width:100%; max-width:600px; height:88vh; display:flex; flex-direction:column; overflow:hidden; }
+  .pdf-modal-header{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .pdf-modal-header span{ font-weight:600; }
+  .pdf-modal-header button{ background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--muted); padding:4px 8px; }
+  .pdf-modal iframe{ flex:1; border:none; width:100%; }
+
+  /* toggles */
+  .toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border); gap:12px; }
+  .toggle-row:last-child{ border-bottom:none; }
+  .toggle-row .lbl{ display:flex; align-items:center; gap:10px; font-size:0.95rem; }
+  .switch{ position:relative; width:44px; height:26px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{ position:absolute; cursor:pointer; inset:0; background:#d7d3ca; border-radius:999px; transition:0.15s; }
+  .slider:before{ content:""; position:absolute; height:20px; width:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:0.15s; }
+  .switch input:checked + .slider{ background:var(--blue-accent); }
+  .switch input:checked + .slider:before{ transform:translateX(18px); }
+  .chip-row{ display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap; }
+  .chip{ padding:10px 16px; border-radius:999px; border:1px solid var(--border); background:var(--pill-bg); font-size:0.88rem; cursor:pointer; }
+  .chip.active{ background:var(--blue-badge-bg); color:var(--blue-badge-ink); border-color:transparent; font-weight:600; }
+
+  /* perfil */
+  .profile-head{ display:flex; align-items:center; gap:16px; margin-bottom:22px; }
+  .profile-head .avatar{ width:60px;height:60px;font-size:1.1rem; }
+  .profile-head .nombre{ font-size:1.1rem; font-weight:600; }
+  .profile-head .correo{ color:var(--muted); font-size:0.85rem; }
+  .plain-row{ display:flex; align-items:center; justify-content:space-between; padding:15px 0; border-bottom:1px solid var(--border); cursor:pointer; }
+  .plain-row:last-of-type{ border-bottom:none; }
+  .plain-row .lbl{ display:flex; align-items:center; gap:12px; font-size:0.95rem; }
+  .plain-row.disabled{ color:var(--muted); cursor:default; }
+  .id-box{ display:flex; align-items:center; gap:8px; background:#f5f3ee; border-radius:10px; padding:8px 12px; font-size:0.78rem; color:var(--muted); margin-top:2px; }
+
+  .checkbox-row{ display:flex; align-items:center; justify-content:space-between; background:var(--pill-bg); border-radius:12px; padding:14px; margin-top:18px; }
+  .checkbox-row input{ width:18px; height:18px; }
+  #dev-codes{ background:#fff7dc; border:1px dashed #d8bd5a; border-radius:12px; padding:10px 14px; font-size:0.78rem; color:#6b551a; margin-top:14px; }
+</style>
+</head>
+<body>
+<div id="phone"></div>
+
+<script>
+const API = '';
+const VEOLIA_LOGO = 'https://www.sabana.veolia.co/themes/custom/veo_site/build/assets/images/logo.png';
+const veoliaBrandHtml = `<div class="veolia-brand"><img src="${VEOLIA_LOGO}" alt="Veolia Sabana" onerror="this.style.display='none'"><div class="bar"></div></div>`;
+const TIPOS = ['LUZ','AGUA','GAS','INTERNET','CELULAR'];
+const TIPO_LABEL = { LUZ:'Luz', AGUA:'Agua', GAS:'Gas', INTERNET:'Internet hogar', CELULAR:'Celular' };
+const TIPO_ICON = { LUZ:{e:'💡',bg:'#dbeafe'}, AGUA:{e:'💧',bg:'#fde2e2'}, GAS:{e:'🔥',bg:'#fde2df'}, INTERNET:{e:'📶',bg:'#ffedd5'}, CELULAR:{e:'📱',bg:'#fbe4ee'} };
+const TIPO_CHART = { LUZ:'#3b6fd8', AGUA:'#ed1c24', GAS:'#e2622c', INTERNET:'#f0a92e', CELULAR:'#ec6fa1' };
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const ROL_LABEL = { DUENO:'Dueño', PUEDE_PAGAR:'Puede pagar', SOLO_VER:'Solo ver' };
+
+const state = {
+  screen: 'registro',
+  history: [],
+  token: localStorage.getItem('pg_token') || null,
+  usuario: null,
+  usuarioIdPendiente: null,
+  passwordPendiente: null,
+  hogares: [],
+  hogarActivo: null,
+  cuentasActivo: [],
+  pendientes: [],
+  reminderDias: localStorage.getItem('pg_reminder') || '3',
+};
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
+function money(n){
+  const f = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:0 }).format(Number(n)||0);
+  return f.replace(/^(\D+)\s+/, '$1');
+}
+function moneyCorto(n){
+  return '$' + Math.round(Number(n) / 1000) + 'k';
+}
+function fmtFecha(d){
+  const dt = new Date(d);
+  return `${String(dt.getDate()).padStart(2,'0')} ${MESES[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+function fmtFechaSolo(isoDateOnly){
+  const [y, m, d] = isoDateOnly.split('-').map(Number);
+  return `${String(d).padStart(2,'0')} ${MESES[m-1]} ${y}`;
+}
+function fmtFechaCorta(d){
+  const dt = new Date(d);
+  return `${String(dt.getDate()).padStart(2,'0')} ${MESES[dt.getMonth()]}`;
+}
+function fmtFechaHora(d){
+  const dt = new Date(d);
+  let h = dt.getHours();
+  const ampm = h >= 12 ? 'pm' : 'am';
+  h = h % 12; if (h === 0) h = 12;
+  const min = String(dt.getMinutes()).padStart(2,'0');
+  return `${fmtFecha(dt)}, ${h}:${min} ${ampm}`;
+}
+function pwField(id, placeholder){
+  return `
+  <div class="pw-wrap">
+    <input type="password" id="${id}" placeholder="${placeholder||''}">
+    <button type="button" class="pw-eye" onclick="toggleVerPassword('${id}', this)">👁</button>
+  </div>`;
+}
+function toggleVerPassword(id, btn){
+  const input = document.getElementById(id);
+  const verlo = input.type === 'password';
+  input.type = verlo ? 'text' : 'password';
+  btn.textContent = verlo ? '🙈' : '👁';
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+async function api(path, opts = {}) {
+  const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+  const res = await fetch(API + path, Object.assign({}, opts, { headers }));
+  const text = await res.text();
+  let body = null;
+  try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+  if (!res.ok) {
+    const err = new Error((body && body.error) || (body && body.mensaje) || `Error HTTP ${res.status}`);
+    err.status = res.status;
+    err.body = body;
+    throw err;
+  }
+  return body;
+}
+
+function goto(screen, push = true){
+  if (push) state.history.push(state.screen);
+  state.screen = screen;
+  render();
+  window.scrollTo(0,0);
+}
+function back(){
+  const prev = state.history.pop();
+  state.screen = prev || 'registro';
+  render();
+}
+
+function backLink(label = '‹ Atrás'){
+  return state.history.length ? `<div class="topline"><button class="back-link" onclick="back()">${label}</button><div></div></div>` : `<div class="topline"></div>`;
+}
+
+/* ---------- AUTH ---------- */
+
+const TIPOS_DOCUMENTO = [
+  { code: 'CC', label: 'Cédula de ciudadanía' },
+  { code: 'CE', label: 'Cédula de extranjería' },
+  { code: 'NIT', label: 'NIT' },
+  { code: 'PA', label: 'Pasaporte' },
+  { code: 'TI', label: 'Tarjeta de identidad' },
+];
+
+function screenRegistro(err, p){
+  p = p || {};
+  return `
+  ${backLink('')}
+  <div class="card">
+    ${veoliaBrandHtml}
+    <h1 class="title">Crea tu cuenta</h1>
+    <p class="subtitle">Vas a necesitar confirmar tu correo y tu celular</p>
+    <label>Nombre completo</label>
+    <input type="text" id="f-nombre" placeholder="Juan Pérez" value="${escapeHtml(p.nombre || '')}">
+    <label>Tipo de documento</label>
+    <select id="f-tipo-doc">
+      ${TIPOS_DOCUMENTO.map(t => `<option value="${t.code}" ${p.tipoDocumento===t.code?'selected':''}>${t.label}</option>`).join('')}
+    </select>
+    <label>Número de documento</label>
+    <input type="text" id="f-num-doc" placeholder="1234567890" value="${escapeHtml(p.numeroDocumento || '')}">
+    <label>Correo electrónico</label>
+    <input type="email" id="f-correo" placeholder="tucorreo@ejemplo.com" value="${escapeHtml(p.correo || '')}">
+    <label>Número de celular</label>
+    <input type="tel" id="f-celular" placeholder="300 123 4567" value="${escapeHtml(p.celular || '')}">
+    <label>Contraseña</label>
+    ${pwField('f-password', 'Mínimo 8 caracteres')}
+    <label>Confirmar contraseña</label>
+    ${pwField('f-password-confirm', 'Repite tu contraseña')}
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doRegistro()">Continuar</button>
+    <p class="foot-note">Al continuar aceptas los términos y la política de privacidad.</p>
+    <p class="foot-note">¿Ya tienes cuenta? <button class="btn-link" onclick="goto('login')">Inicia sesión</button></p>
+  </div>`;
+}
+
+async function doRegistro(){
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const tipoDocumento = document.getElementById('f-tipo-doc').value;
+  const numeroDocumento = document.getElementById('f-num-doc').value.trim();
+  const correo = document.getElementById('f-correo').value.trim();
+  const celular = document.getElementById('f-celular').value.trim();
+  const password = document.getElementById('f-password').value;
+  const passwordConfirm = document.getElementById('f-password-confirm').value;
+  const prefill = { nombre, tipoDocumento, numeroDocumento, correo, celular };
+  if (password !== passwordConfirm) {
+    return render(screenRegistro('Las contraseñas no coinciden', prefill));
+  }
+  try{
+    const r = await api('/api/auth/registro', { method:'POST', body: JSON.stringify({ nombre, correo, celular, password, tipoDocumento, numeroDocumento }) });
+    state.usuarioIdPendiente = r.usuarioId;
+    state.passwordPendiente = password;
+    state.correoPendiente = correo;
+    state.celularPendiente = celular;
+    goto('confirmarCorreo');
+  }catch(e){
+    render(screenRegistro(e.message, prefill));
+  }
+}
+
+function screenLogin(err){
+  return `
+  ${backLink('')}
+  <div class="card">
+    ${veoliaBrandHtml}
+    <h1 class="title">Inicia sesión</h1>
+    <p class="subtitle">Entra con tu correo y contraseña</p>
+    <label>Correo electrónico</label>
+    <input type="email" id="f-login-correo" placeholder="tucorreo@ejemplo.com">
+    <label>Contraseña</label>
+    ${pwField('f-login-password', 'Tu contraseña')}
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doLogin()">Entrar</button>
+    <p class="foot-note"><button class="btn-link" onclick="goto('olvidePassword')">¿Olvidaste tu contraseña?</button></p>
+    <p class="foot-note">¿No tienes cuenta? <button class="btn-link" onclick="goto('registro')">Regístrate</button></p>
+  </div>`;
+}
+
+function screenOlvidePassword(err){
+  return `
+  ${backLink('')}
+  <div class="card">
+    ${veoliaBrandHtml}
+    <h1 class="title">¿Olvidaste tu contraseña?</h1>
+    <p class="subtitle">Ingresa tu correo y te enviamos un código para restablecerla</p>
+    <label>Correo electrónico</label>
+    <input type="email" id="f-olvide-correo" placeholder="tucorreo@ejemplo.com">
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doOlvidePassword()">Enviar código</button>
+  </div>`;
+}
+async function doOlvidePassword(){
+  const correo = document.getElementById('f-olvide-correo').value.trim();
+  try{
+    await api('/api/auth/olvide-password', { method:'POST', body: JSON.stringify({ correo }) });
+    state.correoPendiente = correo;
+    goto('restablecerPassword');
+  }catch(e){
+    render(screenOlvidePassword(e.message));
+  }
+}
+
+function screenRestablecerPassword(err){
+  return `
+  ${backLink('')}
+  <div class="card">
+    ${veoliaBrandHtml}
+    <h1 class="title">Restablece tu contraseña</h1>
+    <p class="subtitle">Enviamos un código a<br>${escapeHtml(state.correoPendiente||'')}</p>
+    <label>Código de 6 dígitos</label>
+    <input type="text" id="f-reset-cod" maxlength="6" style="text-align:center;letter-spacing:6px;font-size:1.2rem;">
+    <label>Nueva contraseña</label>
+    ${pwField('f-reset-pw-nueva', 'Mínimo 8 caracteres')}
+    <label>Confirmar nueva contraseña</label>
+    ${pwField('f-reset-pw-confirm', 'Repite la nueva contraseña')}
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doRestablecerPassword()">Cambiar contraseña</button>
+  </div>`;
+}
+async function doRestablecerPassword(){
+  const codigo = document.getElementById('f-reset-cod').value.trim();
+  const passwordNueva = document.getElementById('f-reset-pw-nueva').value;
+  const passwordConfirm = document.getElementById('f-reset-pw-confirm').value;
+  if (passwordNueva !== passwordConfirm) {
+    return render(screenRestablecerPassword('Las contraseñas no coinciden'));
+  }
+  try{
+    await api('/api/auth/restablecer-password', { method:'POST', body: JSON.stringify({ correo: state.correoPendiente, codigo, passwordNueva }) });
+    toast('Contraseña actualizada, ya puedes iniciar sesión');
+    goto('login', false);
+  }catch(e){
+    render(screenRestablecerPassword(e.message));
+  }
+}
+
+async function doLogin(){
+  const correo = document.getElementById('f-login-correo').value.trim();
+  const password = document.getElementById('f-login-password').value;
+  try{
+    const r = await api('/api/auth/login', { method:'POST', body: JSON.stringify({ correo, password }) });
+    state.token = r.token;
+    state.usuario = r.usuario;
+    localStorage.setItem('pg_token', r.token);
+    await abrirSelectorHogares();
+  }catch(e){
+    render(screenLogin(e.message));
+  }
+}
+
+function screenConfirmarCorreo(err, codeVal){
+  return `
+  <div class="card">
+    <div class="receipt-check" style="background:var(--blue-badge-bg);color:var(--blue-accent);">✉</div>
+    <div class="receipt-title">Confirma tu correo</div>
+    <div class="receipt-sub">Enviamos un código a<br>${escapeHtml(state.correoPendiente||'')}</div>
+    <label style="text-align:center;margin-top:22px;">Código de 6 dígitos</label>
+    <input type="text" id="f-cod-correo" maxlength="6" style="text-align:center;letter-spacing:6px;font-size:1.2rem;" value="${codeVal||''}">
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doVerificarCorreo()">Verificar</button>
+    <p class="foot-note"><button class="btn-link" onclick="reenviarCodigo('correo')">Reenviar código</button></p>
+    <div id="dev-codes">Modo dev: el código se imprime en la consola del servidor (no hay envío real de correo).</div>
+  </div>`;
+}
+async function doVerificarCorreo(){
+  const codigo = document.getElementById('f-cod-correo').value.trim();
+  try{
+    await api('/api/auth/verificar-correo', { method:'POST', body: JSON.stringify({ usuarioId: state.usuarioIdPendiente, codigo }) });
+    goto('confirmarCelular');
+  }catch(e){ render(screenConfirmarCorreo(e.message, codigo)); }
+}
+
+function screenConfirmarCelular(err, codeVal){
+  return `
+  <div class="card">
+    <div class="receipt-check">📱</div>
+    <div class="receipt-title">Confirma tu celular</div>
+    <div class="receipt-sub">Enviamos un SMS con un código a<br>${escapeHtml(state.celularPendiente||'')}</div>
+    <label style="text-align:center;margin-top:22px;">Código de 6 dígitos</label>
+    <input type="text" id="f-cod-celular" maxlength="6" style="text-align:center;letter-spacing:6px;font-size:1.2rem;" value="${codeVal||''}">
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doVerificarCelular()">Verificar y continuar</button>
+    <p class="foot-note"><button class="btn-link" onclick="reenviarCodigo('celular')">Reenviar código</button></p>
+    <div id="dev-codes">Modo dev: el código se imprime en la consola del servidor (no hay envío real de SMS).</div>
+  </div>`;
+}
+async function doVerificarCelular(){
+  const codigo = document.getElementById('f-cod-celular').value.trim();
+  try{
+    await api('/api/auth/verificar-celular', { method:'POST', body: JSON.stringify({ usuarioId: state.usuarioIdPendiente, codigo }) });
+    const r = await api('/api/auth/login', { method:'POST', body: JSON.stringify({ correo: state.correoPendiente, password: state.passwordPendiente }) });
+    state.token = r.token;
+    state.usuario = r.usuario;
+    localStorage.setItem('pg_token', r.token);
+    state.history = [];
+    await abrirSelectorHogares();
+  }catch(e){ render(screenConfirmarCelular(e.message, codigo)); }
+}
+async function reenviarCodigo(canal){
+  try{
+    await api('/api/auth/reenviar-codigo', { method:'POST', body: JSON.stringify({ usuarioId: state.usuarioIdPendiente, canal }) });
+    toast('Código reenviado (revisa la consola del servidor)');
+  }catch(e){ toast(e.message); }
+}
+
+/* ---------- SELECTOR DE HOGARES ---------- */
+
+async function abrirSelectorHogares(){
+  if (!state.usuario) {
+    try { state.usuario = await api('/api/auth/me'); } catch { return goto('registro', false); }
+  }
+  const hogares = await api('/api/hogares');
+  const conStats = await Promise.all(hogares.map(async h => {
+    let cuentas = [];
+    try { cuentas = await api(`/api/cuentas/hogares/${h.id}`); } catch {}
+    return Object.assign({}, h, { serviciosCount: cuentas.length, cuentas });
+  }));
+  state.hogares = conStats;
+  try { state.invitacionesPendientes = await api('/api/hogares/invitaciones'); } catch { state.invitacionesPendientes = []; }
+  goto('selectorHogares', false);
+  state.history = [];
+  refrescarFacturasVeoliaEnSegundoPlano(conStats);
+}
+
+async function aceptarInvitacion(invId){
+  try{
+    await api(`/api/hogares/invitaciones/${invId}/aceptar`, { method:'POST' });
+    toast('Te uniste al hogar');
+    await abrirSelectorHogares();
+  }catch(e){ toast(e.message); }
+}
+async function rechazarInvitacion(invId){
+  try{
+    await api(`/api/hogares/invitaciones/${invId}/rechazar`, { method:'POST' });
+    toast('Invitación rechazada');
+    await abrirSelectorHogares();
+  }catch(e){ toast(e.message); }
+}
+
+// Al iniciar sesión (o al restaurar la sesión guardada), refrescamos en
+// segundo plano el valor real de cada suscripción de Veolia consultando su
+// portal, sin bloquear la pantalla. Así cuando el usuario entre a un hogar
+// ya encuentra el dato cacheado y fresco (ver abrirHogar).
+// Solo se hace una vez por día calendario (aunque recargue varias veces la
+// página), para no golpear el portal de Veolia más de lo necesario.
+function fechaHoyStr(){ return new Date().toISOString().slice(0,10); }
+
+function refrescarFacturasVeoliaEnSegundoPlano(hogares){
+  const hoy = fechaHoyStr();
+  if (localStorage.getItem('pg_ultimo_refresco_veolia') === hoy) return;
+  localStorage.setItem('pg_ultimo_refresco_veolia', hoy);
+  hogares
+    .flatMap(h => (h.cuentas || []).filter(c => c.tipo === 'AGUA' && c.empresa === 'Veolia Sabana'))
+    .forEach(c => { api(`/api/cuentas/${c.id}/factura-veolia`).catch(() => {}); });
+}
+
+// Cubre el caso de dejar la pestaña abierta de un día para otro sin recargar:
+// revisa periódicamente (y al volver a la pestaña) si ya cambió el día y, de
+// ser así, vuelve a traer hogares/cuentas para refrescar Veolia.
+async function refrescarFacturasVeoliaSiNuevoDia(){
+  if (!state.usuario) return;
+  if (localStorage.getItem('pg_ultimo_refresco_veolia') === fechaHoyStr()) return;
+  try {
+    const hogares = await api('/api/hogares');
+    const conCuentas = await Promise.all(hogares.map(async h => {
+      let cuentas = [];
+      try { cuentas = await api(`/api/cuentas/hogares/${h.id}`); } catch {}
+      return Object.assign({}, h, { cuentas });
+    }));
+    refrescarFacturasVeoliaEnSegundoPlano(conCuentas);
+  } catch {}
+}
+setInterval(refrescarFacturasVeoliaSiNuevoDia, 15 * 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refrescarFacturasVeoliaSiNuevoDia();
+});
+
+function screenSelectorHogares(){
+  const invitaciones = state.invitacionesPendientes || [];
+  const invitacionesHtml = invitaciones.map(inv => `
+    <div class="list-card" style="flex-direction:column;align-items:stretch;gap:8px;">
+      <div>Te invitaron al hogar <strong>${escapeHtml(inv.hogar.nombre)}</strong></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-black" style="flex:1;margin-top:0;padding:10px;" onclick="aceptarInvitacion('${inv.id}')">Aceptar</button>
+        <button class="btn-outline" style="flex:1;" onclick="rechazarInvitacion('${inv.id}')">Rechazar</button>
+      </div>
+    </div>
+  `).join('');
+  const rows = state.hogares.map(h => `
+    <div class="hogar-row ${state.hogarActivo && state.hogarActivo.id===h.id ? 'activo':''}" onclick="abrirHogar('${h.id}')">
+      <div class="hogar-icon">🏠</div>
+      <div class="hogar-info">
+        <div class="nombre">${escapeHtml(h.nombre)}</div>
+        <div class="meta">${h.serviciosCount} suscripción${h.serviciosCount===1?'':'es'}</div>
+      </div>
+      ${state.hogarActivo && state.hogarActivo.id===h.id ? '<span class="badge-activo">Activo</span>' : '<span class="chevron">›</span>'}
+    </div>
+  `).join('');
+  return `
+  ${backLink('')}
+  ${invitaciones.length ? `<div class="card"><h1 class="title" style="margin-bottom:18px;">Invitaciones pendientes</h1>${invitacionesHtml}</div>` : ''}
+  <div class="card">
+    <h1 class="title" style="margin-bottom:18px;">Mis hogares</h1>
+    ${rows || '<p class="subtitle">Aún no perteneces a ningún hogar.</p>'}
+    <div class="btn-outline full" style="margin-top:6px;" onclick="goto('crearHogar')">+ Crear nuevo hogar</div>
+  </div>
+  <div class="card" style="padding:16px 24px;">
+    <div class="plain-row" onclick="goto('perfil')"><div class="lbl">👤 Mi perfil</div><span class="chevron">›</span></div>
+  </div>`;
+}
+
+function screenCrearHogar(err){
+  return `
+  ${backLink()}
+  <div class="card">
+    <h1 class="title">Crear nuevo hogar</h1>
+    <label>Nombre del hogar</label>
+    <input type="text" id="f-hogar-nombre" placeholder="Casa Principal">
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doCrearHogar()">Crear hogar</button>
+  </div>`;
+}
+async function doCrearHogar(){
+  const nombre = document.getElementById('f-hogar-nombre').value.trim();
+  try{
+    await api('/api/hogares', { method:'POST', body: JSON.stringify({ nombre }) });
+    await abrirSelectorHogares();
+  }catch(e){ render(screenCrearHogar(e.message)); }
+}
+
+async function abrirHogar(id){
+  const hogar = await api(`/api/hogares/${id}`);
+  state.hogarActivo = hogar;
+  const cuentas = await api(`/api/cuentas/hogares/${id}`);
+  state.cuentasActivo = cuentas;
+
+  // El valor de cada suscripción ya viene cacheado (facturaVeolia) desde la
+  // última consulta real a Veolia — no hace falta volver a consultar el
+  // portal en vivo solo para abrir el hogar. Esa consulta en vivo se hace al
+  // entrar al detalle de la factura (verFacturaVeoliaDesdeHome).
+  cuentas.forEach(c => {
+    if (c.tipo === 'AGUA' && c.empresa === 'Veolia Sabana' && c.facturaVeolia) {
+      c.montoPendiente = c.facturaVeolia.totalPagar;
+    }
+  });
+
+  state.pendientes = cuentas;
+  goto('home', false);
+  state.history = [];
+}
+
+/* ---------- HOME ---------- */
+
+function totalFacturasPendientes(){
+  return (state.pendientes || []).reduce((a,c) => a + (c.montoPendiente != null ? Number(c.montoPendiente) : 0), 0);
+}
+
+function screenHome(){
+  const h = state.hogarActivo;
+  const totalMes = totalFacturasPendientes();
+  const pend = state.pendientes;
+  const esDueno = (h.miembros || []).some(m => m.usuarioId === state.usuario.id && m.rol === 'DUENO');
+  const rows = pend.slice(0,5).map(c => {
+    const ic = TIPO_ICON[c.tipo];
+    const esVeolia = c.tipo === 'AGUA' && c.empresa === 'Veolia Sabana';
+    const onClickInfo = esVeolia ? `verFacturaVeoliaDesdeHome('${c.id}')` : '';
+    return `
+    <div class="venc-row">
+      <div class="icon-circle" style="background:${ic.bg};">${ic.e}</div>
+      <div class="venc-info" ${onClickInfo ? `style="cursor:pointer;" onclick="${onClickInfo}"` : ''}>
+        <div class="nom">${escapeHtml(c.empresa)}</div>
+        <div class="sub">${c.alias ? escapeHtml(c.alias) : 'Suscriptor ' + escapeHtml(c.numeroCuenta)}${c.montoPendiente != null ? ' · ' + money(c.montoPendiente) : ''}</div>
+      </div>
+      ${esDueno ? `<button class="btn-outline small" style="color:var(--red-ink);" onclick="eliminarServicioHogar('${c.id}')" title="Eliminar suscripción">🗑</button>` : ''}
+    </div>`;
+  }).join('');
+  return `
+  <div class="card">
+    ${veoliaBrandHtml}
+    <div class="home-header">
+      <div>
+        <div class="label">Hogar activo</div>
+        <div class="nombre" onclick="goto('selectorHogares')">${escapeHtml(h.nombre)} ▾</div>
+      </div>
+      <button class="bell" onclick="goto('notificaciones')">🔔</button>
+    </div>
+    <div class="total-box">
+      <div class="lbl">Total a pagar este mes</div>
+      <div class="val">${money(totalMes)}</div>
+    </div>
+    ${pend.length ? `<div class="venc-title">Tus suscripciones</div>${rows}` : ''}
+    <div class="nav-grid">
+      <button class="nav-item" onclick="abrirHistorial()"><span class="ic">🕒</span><span>Historial</span></button>
+      <button class="nav-item" onclick="goto('agregarServicio')"><span class="ic">➕</span><span>Agregar</span></button>
+      <button class="nav-item" onclick="goto('miembros')"><span class="ic">👥</span><span>Miembros</span></button>
+      <button class="nav-item" onclick="goto('notificaciones')"><span class="ic">⚙️</span><span>Ajustes</span></button>
+    </div>
+  </div>
+  <div class="card" style="padding:16px 24px;">
+    <div class="plain-row" onclick="goto('oficinas')"><div class="lbl">🏢 Oficinas de atención al cliente</div><span class="chevron">›</span></div>
+    <div class="plain-row" onclick="goto('perfil')"><div class="lbl">👤 Mi perfil</div><span class="chevron">›</span></div>
+  </div>`;
+}
+
+const OFICINAS_VEOLIA_SABANA = [
+  {
+    sede: 'Centro Comercial Viva - Sincelejo',
+    direccion: 'Primer piso, local 001',
+    municipio: 'Sincelejo, Sucre',
+    horario: [
+      'Lunes a jueves: 7:30 a.m. – 3:30 p.m. (jornada continua)',
+      'Viernes: 7:30 a.m. – 1:30 p.m. (jornada continua)',
+      'Sábados: 9:00 a.m. – 11:00 a.m. (convenios de pago, negociación de cartera y duplicados de factura)',
+    ],
+  },
+  {
+    sede: 'Sede Progreso - Sincelejo',
+    direccion: 'Carrera 19 No. 42A – 84, Barrio Progreso',
+    municipio: 'Sincelejo, Sucre',
+    horario: [
+      'Lunes a jueves: 7:30 a.m. – 12:00 p.m. y 2:00 p.m. – 5:30 p.m.',
+      'Viernes: 7:30 a.m. – 12:00 p.m. y 2:00 p.m. – 4:30 p.m.',
+    ],
+  },
+  {
+    sede: 'Sede Corozal',
+    direccion: 'Calle 32 No. 21 – 74, Barrio San Miguel',
+    municipio: 'Corozal, Sucre',
+    horario: [
+      'Lunes a jueves: 7:30 a.m. – 12:00 p.m. y 2:00 p.m. – 5:30 p.m.',
+      'Viernes: 7:30 a.m. – 12:00 p.m. y 2:00 p.m. – 4:30 p.m.',
+    ],
+  },
+  {
+    sede: 'Sede Chinú',
+    direccion: 'Calle 17 No. 11-31, Barrio San Simón',
+    municipio: 'Chinú, Córdoba',
+    horario: [
+      'Lunes a jueves: 7:30 a.m. – 12:00 p.m. y 2:00 p.m. – 5:30 p.m.',
+      'Viernes: 7:30 a.m. – 12:00 p.m. y 2:00 p.m. – 4:30 p.m.',
+    ],
+  },
+  {
+    sede: 'Sede Magangué',
+    direccion: 'Carrera 16 No. 16D-135, Barrio San José',
+    municipio: 'Magangué, Bolívar',
+    horario: [
+      'Lunes a jueves: 7:30 a.m. – 12:00 p.m. y 2:00 p.m. – 5:30 p.m.',
+      'Viernes: 7:30 a.m. – 12:00 p.m. y 2:00 p.m. – 4:30 p.m.',
+      'Sábados: 8:00 a.m. – 11:00 a.m.',
+    ],
+  },
+];
+
+function screenOficinas(){
+  const cards = OFICINAS_VEOLIA_SABANA.map(o => `
+    <div class="list-card" style="flex-direction:column;align-items:stretch;gap:6px;">
+      <div style="font-weight:600;">${escapeHtml(o.sede)}</div>
+      <div class="rol-tag" style="white-space:normal;">${escapeHtml(o.direccion)} · ${escapeHtml(o.municipio)}</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">
+        ${o.horario.map(h => escapeHtml(h)).join('<br>')}
+      </div>
+    </div>`).join('');
+  return `
+  ${backLink()}
+  <div class="card">
+    <h1 class="title" style="margin-bottom:4px;">Oficinas de atención al cliente</h1>
+    <p class="subtitle">Acueducto Veolia Sabana</p>
+    ${cards}
+    <div class="resumen-box" style="margin-top:6px;">
+      <div style="font-weight:600;margin-bottom:6px;">Línea de atención</div>
+      <div style="font-size:0.88rem;">116 desde un móvil Claro, Movistar o Tigo (Sincelejo, Corozal y Chinú)</div>
+      <div style="font-size:0.88rem;margin-top:4px;">018000 918761 (Sincelejo, Corozal, Chinú y Magangué)</div>
+      <div style="font-size:0.88rem;margin-top:4px;">co.atencionalclientesabana@veolia.com</div>
+    </div>
+  </div>`;
+}
+
+async function eliminarServicioHogar(cuentaId){
+  const cuenta = state.cuentasActivo.find(c => c.id === cuentaId);
+  const nombre = cuenta ? cuenta.empresa : 'este servicio';
+  if (!confirm(`¿Eliminar ${nombre}? Esta acción no se puede deshacer.`)) return;
+  try {
+    await api(`/api/cuentas/${cuentaId}`, { method: 'DELETE' });
+    toast('Servicio eliminado');
+    await abrirHogar(state.hogarActivo.id);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function verFacturaVeoliaDesdeHome(cuentaId){
+  const cuenta = state.pendientes.find(c => c.id === cuentaId) || state.cuentasActivo.find(c => c.id === cuentaId);
+  if (!cuenta) return;
+  let factura = cuenta.facturaVeolia;
+  if (!factura) {
+    toast('Consultando tu factura de Veolia Sabana...');
+    try {
+      factura = await api(`/api/cuentas/${cuentaId}/factura-veolia`);
+    } catch (e) {
+      toast(e.message);
+      return;
+    }
+  }
+  state.facturaVeolia = { cuenta, factura };
+  goto('facturaVeolia', false);
+}
+
+/* ---------- AGREGAR SUSCRIPCIÓN (solo Agua / Veolia Sabana por ahora) ---------- */
+
+function screenAgregarServicio(err, loading, prefill){
+  const p = prefill || {};
+  return `
+  ${backLink()}
+  <div class="card">
+    <h1 class="title">Agregar suscripción</h1>
+    <p class="subtitle">Acueducto Veolia Sabana</p>
+    <label>Número suscriptor (parte superior derecha de su recibo)</label>
+    <input type="text" id="f-serv-numero" placeholder="21513336" value="${escapeHtml(p.numeroCuenta || '')}" ${loading?'disabled':''}>
+    <label>Alias (opcional)</label>
+    <input type="text" id="f-serv-alias" placeholder="Agua casa" value="${escapeHtml(p.alias || '')}" ${loading?'disabled':''}>
+    <div class="checkbox-row">
+      <span>Activar pago automático</span>
+      <input type="checkbox" id="f-serv-auto" ${p.pagoAutomatico?'checked':''} ${loading?'disabled':''}>
+    </div>
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doAgregarServicio()" ${loading?'disabled':''}>${loading ? loading : 'Agregar suscripción'}</button>
+  </div>`;
+}
+async function doAgregarServicio(){
+  const tipo = 'AGUA';
+  const empresa = 'Veolia Sabana';
+  const numeroCuenta = document.getElementById('f-serv-numero').value.trim();
+  const alias = document.getElementById('f-serv-alias').value.trim();
+  const pagoAutomatico = document.getElementById('f-serv-auto').checked;
+  const prefill = { numeroCuenta, alias, pagoAutomatico };
+
+  render(screenAgregarServicio(null, 'Consultando tu factura con Veolia Sabana...', prefill));
+  let factura;
+  try {
+    factura = await api('/api/veolia/factura', { method:'POST', body: JSON.stringify({ numeroSuscriptor: numeroCuenta }) });
+  } catch (e) {
+    render(screenAgregarServicio(e.message, null, prefill));
+    return;
+  }
+
+  try{
+    const { pdfBase64, ...facturaDatos } = factura;
+    const cuenta = await api(`/api/cuentas/hogares/${state.hogarActivo.id}`, { method:'POST', body: JSON.stringify({ tipo, empresa, numeroCuenta, alias, pagoAutomatico, facturaVeolia: facturaDatos }) });
+    toast('Suscripción agregada');
+    await abrirHogar(state.hogarActivo.id);
+    state.facturaVeolia = { cuenta, factura };
+    goto('facturaVeolia', false);
+  }catch(e){
+    render(screenAgregarServicio(e.message, null, prefill));
+  }
+}
+
+function screenFacturaVeolia(){
+  const { cuenta, factura } = state.facturaVeolia;
+  return `
+  <div class="card">
+    ${veoliaBrandHtml}
+    <div class="receipt-check" style="background:var(--veolia-red-bg);color:var(--veolia-red);">💧</div>
+    <div class="receipt-title">Factura consultada</div>
+    <div class="receipt-sub">Veolia Sabana · Suscriptor ${escapeHtml(cuenta.numeroCuenta)}</div>
+    ${factura.totalPagar != null ? `<div class="receipt-monto">${money(factura.totalPagar)}</div>` : `<p class="subtitle" style="text-align:center;">No se pudo leer el total automáticamente, revisa el PDF.</p>`}
+    ${factura.fechaMaximaPago ? `
+    <div class="receipt-box">
+      <div class="receipt-kv"><span>Fecha máxima de pago</span><span>${fmtFechaSolo(factura.fechaMaximaPago)}</span></div>
+    </div>` : ''}
+    <div class="two-col">
+      <div class="btn-outline" onclick="verPdfFacturaVeolia()">Ver PDF</div>
+      <div class="btn-outline" onclick="descargarPdfFacturaVeolia()">↓ Descargar</div>
+    </div>
+    ${factura.referenciaPago ? `<button class="btn-black" onclick="pagarConSimilpay()">🏦 Pagar en línea con PSE (Similpay)</button>` : ''}
+    <div class="btn-outline full" style="margin-top:10px;" onclick="goto('home', false); state.history=[];">Volver al inicio</div>
+  </div>`;
+}
+function pdfFacturaVeoliaBlobUrl(){
+  const base64 = state.facturaVeolia.factura.pdfBase64;
+  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  return URL.createObjectURL(blob);
+}
+function descargarBlob(url, filename){
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+function verPdfFacturaVeolia(){
+  // Un blob: URL abierto en una pestaña nueva suele quedar en blanco en Chrome
+  // (el blob vive en el proceso de la pestaña original), así que se muestra
+  // aquí mismo en un visor dentro de la app.
+  const url = pdfFacturaVeoliaBlobUrl();
+  mostrarPdfModal(url);
+}
+function mostrarPdfModal(url){
+  cerrarPdfModal();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'pdf-modal-backdrop';
+  backdrop.id = 'pdf-modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="pdf-modal">
+      <div class="pdf-modal-header">
+        <span>Factura PDF</span>
+        <button onclick="cerrarPdfModal()">✕</button>
+      </div>
+      <iframe src="${url}"></iframe>
+    </div>`;
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) cerrarPdfModal(); });
+  document.body.appendChild(backdrop);
+  window._pdfModalUrl = url;
+}
+function cerrarPdfModal(){
+  const el = document.getElementById('pdf-modal-backdrop');
+  if (el) el.remove();
+  if (window._pdfModalUrl) { URL.revokeObjectURL(window._pdfModalUrl); window._pdfModalUrl = null; }
+}
+function descargarPdfFacturaVeolia(){
+  const url = pdfFacturaVeoliaBlobUrl();
+  descargarBlob(url, `factura-veolia-${state.facturaVeolia.cuenta.numeroCuenta}.pdf`);
+  URL.revokeObjectURL(url);
+}
+// La propia app de Similpay soporta pasar la referencia directamente en la
+// URL (biller_code/:id/:referencia), y con eso ya hace la búsqueda sola y
+// muestra el resultado en su sitio real. No hay que escribir ni dar clic en
+// "buscar": abrimos esa pestaña ya con el resultado listo. De ahí en adelante
+// seleccionar PSE, aceptar las políticas y presionar "Pagar" es una
+// transacción real que debe completar la persona.
+function pagarConSimilpay(){
+  const { factura } = state.facturaVeolia;
+  const ref = factura.referenciaPago;
+  if (!ref) { toast('No hay referencia de pago para consultar'); return; }
+  const url = `https://similpay.com/#/biller_code/18569/${encodeURIComponent(ref)}`;
+  window.open(url, '_blank', 'noopener');
+}
+
+/* ---------- HISTORIAL ---------- */
+
+function screenHistorial(){
+  const cuentas = state.cuentasActivo;
+  if (!cuentas.length) {
+    return `${backLink()}<div class="card"><h1 class="title">Historial</h1><p class="subtitle">Aún no tienes suscripciones de agua registradas.</p></div>`;
+  }
+  const cuentaId = (state.historialSuscripcionId && cuentas.some(c => c.id === state.historialSuscripcionId))
+    ? state.historialSuscripcionId
+    : cuentas[0].id;
+  const cuenta = cuentas.find(c => c.id === cuentaId);
+
+  // El histórico de facturación viene directo del recibo de Veolia (últimos
+  // periodos ya facturados); no guardamos pagos dentro de la app.
+  const historico = (cuenta.facturaVeolia && cuenta.facturaVeolia.historico) || [];
+  const maxTotal = Math.max(1, ...historico.map(h => h.valor));
+  const totalEsteMes = historico.length ? historico[historico.length - 1].valor : 0;
+  const promedio = historico.length ? historico.reduce((a,h) => a + h.valor, 0) / historico.length : 0;
+
+  const bars = historico.map(h => `
+    <div class="bar-col">
+      <div class="bar-fill" style="height:${(h.valor/maxTotal)*85}%;background:${TIPO_CHART.AGUA};">
+        <span class="bar-value">${moneyCorto(h.valor)}</span>
+      </div>
+    </div>`).join('');
+  const labels = historico.map(h => `<span>${MESES[Number(h.mes.slice(5,7))-1]}</span>`).join('');
+  const tablaFilas = historico.map(h => `
+    <div class="hist-tabla-fila">
+      <span>${MESES[Number(h.mes.slice(5,7))-1]} ${h.mes.slice(0,4)}</span>
+      <span>${money(h.valor)}</span>
+    </div>`).join('');
+
+  const tabsHtml = cuentas.length > 1 ? `
+    <div class="tabs">
+      ${cuentas.map(c => `<button class="tab ${c.id===cuentaId?'active':''}" onclick="verHistorialSuscripcion('${c.id}')">${escapeHtml(c.alias || 'Suscriptor ' + c.numeroCuenta)}</button>`).join('')}
+    </div>` : '';
+
+  return `
+  ${backLink()}
+  <div class="card">
+    <h1 class="title" style="margin-bottom:14px;">Historial</h1>
+    ${tabsHtml}
+    <div class="stat-row">
+      <div class="stat-box"><div class="lbl">Última factura</div><div class="val">${money(totalEsteMes)}</div></div>
+      <div class="stat-box"><div class="lbl">Promedio mensual</div><div class="val">${money(promedio)}</div></div>
+    </div>
+    ${historico.length ? `
+    <div class="chart-wrap">
+      <div class="hist-title" style="margin-top:0;">Valor facturado por mes (según Veolia)</div>
+      <div class="chart-area">${bars}</div>
+      <div class="bar-labels">${labels}</div>
+      <div class="hist-tabla">${tablaFilas}</div>
+    </div>` : '<p class="subtitle">Aún no hay histórico de facturación para esta suscripción. Ábrela una vez para consultarlo.</p>'}
+  </div>`;
+}
+
+async function abrirHistorial(){
+  if (!state.historialSuscripcionId || !state.cuentasActivo.some(c => c.id === state.historialSuscripcionId)) {
+    state.historialSuscripcionId = state.cuentasActivo[0] ? state.cuentasActivo[0].id : null;
+  }
+  goto('historial');
+}
+function verHistorialSuscripcion(cuentaId){
+  state.historialSuscripcionId = cuentaId;
+  render(screenHistorial());
+}
+
+
+/* ---------- MIEMBROS ---------- */
+
+function screenMiembros(err){
+  const h = state.hogarActivo;
+  const esDueno = h.miembros.some(m => m.usuarioId === state.usuario.id && m.rol === 'DUENO');
+  const rows = h.miembros.map(m => {
+    const esYo = m.usuarioId === state.usuario.id;
+    const nombre = esYo ? 'Tú' : (m.usuario ? m.usuario.nombre : m.usuarioId);
+    const iniciales = esYo ? 'TU' : nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    return `
+    <div class="list-card">
+      <div class="avatar">${iniciales}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;">${escapeHtml(nombre)}</div>
+      </div>
+      <div class="rol-tag">${ROL_LABEL[m.rol]}</div>
+    </div>`;
+  }).join('');
+  const invitaciones = h.invitaciones || [];
+  const invitacionesHtml = invitaciones.map(inv => `
+    <div class="list-card">
+      <div style="flex:1;">
+        <div style="font-weight:600;">${escapeHtml(inv.correo || inv.celular)}</div>
+        <div class="rol-tag">Invitación pendiente</div>
+      </div>
+      ${esDueno ? `<button class="btn-outline small" style="color:var(--red-ink);" onclick="cancelarInvitacion('${inv.id}')">Cancelar</button>` : ''}
+    </div>`).join('');
+  return `
+  ${backLink()}
+  <div class="card">
+    <h1 class="title">Miembros - ${escapeHtml(h.nombre)}</h1>
+    <p class="subtitle">Quién puede ver y pagar los servicios de este hogar</p>
+    ${rows}
+    ${invitacionesHtml}
+    <div class="btn-outline full" style="margin-top:6px;" onclick="goto('invitarMiembro')">+ Invitar miembro</div>
+  </div>`;
+}
+
+function screenInvitarMiembro(err){
+  return `
+  ${backLink()}
+  <div class="card">
+    <h1 class="title">Invitar miembro</h1>
+    <p class="subtitle">Ingresa el correo o el número de celular de la persona. Si ya tiene cuenta, le llega la invitación para aceptarla. Si no, le enviamos un link para que descargue la app y se registre con ese mismo dato.</p>
+    <label>Correo o número de celular</label>
+    <input type="text" id="f-inv-contacto" placeholder="correo@ejemplo.com o 300 123 4567">
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doInvitarMiembro()">Invitar</button>
+  </div>`;
+}
+async function doInvitarMiembro(){
+  const contacto = document.getElementById('f-inv-contacto').value.trim();
+  try{
+    const r = await api(`/api/hogares/${state.hogarActivo.id}/invitaciones`, { method:'POST', body: JSON.stringify({ contacto }) });
+    toast(r.existeCuenta ? 'Invitación enviada' : 'Como no tiene cuenta, le enviamos un link para descargar la app y registrarse');
+    const hogar = await api(`/api/hogares/${state.hogarActivo.id}`);
+    state.hogarActivo = hogar;
+    goto('miembros', false);
+  }catch(e){ render(screenInvitarMiembro(e.message)); }
+}
+async function cancelarInvitacion(invId){
+  try{
+    await api(`/api/hogares/${state.hogarActivo.id}/invitaciones/${invId}`, { method:'DELETE' });
+    toast('Invitación cancelada');
+    const hogar = await api(`/api/hogares/${state.hogarActivo.id}`);
+    state.hogarActivo = hogar;
+    render(screenMiembros());
+  }catch(e){ toast(e.message); }
+}
+
+/* ---------- NOTIFICACIONES / AJUSTES ---------- */
+
+function screenNotificaciones(){
+  const rows = state.cuentasActivo.map(c => `
+    <div class="toggle-row">
+      <div class="lbl">${TIPO_ICON[c.tipo].e} ${escapeHtml(c.empresa)}</div>
+      <label class="switch">
+        <input type="checkbox" ${c.pagoAutomatico?'checked':''} onchange="togglePagoAutomatico('${c.id}', this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+  `).join('');
+  return `
+  ${backLink()}
+  <div class="card">
+    <h1 class="title">Recordatorios y pago automático</h1>
+    <label>Recordarme antes del vencimiento</label>
+    <div class="chip-row">
+      <div class="chip ${state.reminderDias==='3'?'active':''}" onclick="setReminder('3')">3 días</div>
+      <div class="chip ${state.reminderDias==='1'?'active':''}" onclick="setReminder('1')">1 día</div>
+      <div class="chip ${state.reminderDias==='0'?'active':''}" onclick="setReminder('0')">El mismo día</div>
+    </div>
+    <label style="margin-top:0;">Pago automático por servicio</label>
+    ${rows || '<p class="subtitle">Este hogar aún no tiene servicios.</p>'}
+  </div>`;
+}
+function setReminder(v){
+  state.reminderDias = v;
+  localStorage.setItem('pg_reminder', v);
+  render();
+}
+async function togglePagoAutomatico(cuentaId, valor){
+  try{
+    await api(`/api/cuentas/${cuentaId}`, { method:'PATCH', body: JSON.stringify({ pagoAutomatico: valor }) });
+    const idx = state.cuentasActivo.findIndex(c=>c.id===cuentaId);
+    if (idx >= 0) state.cuentasActivo[idx].pagoAutomatico = valor;
+    toast(valor ? 'Pago automático activado' : 'Pago automático desactivado');
+  }catch(e){ toast(e.message); render(); }
+}
+
+/* ---------- PERFIL ---------- */
+
+function screenPerfil(){
+  const u = state.usuario;
+  const iniciales = (u.nombre||'').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase() || 'TU';
+  return `
+  ${backLink()}
+  <div class="card">
+    <div class="profile-head">
+      <div class="avatar">${iniciales}</div>
+      <div>
+        <div class="nombre">${escapeHtml(u.nombre)}</div>
+        <div class="correo">${escapeHtml(u.correo || '')}</div>
+      </div>
+    </div>
+    <div class="id-box">Mi ID: ${u.id} <button class="btn-link" onclick="copiarId('${u.id}')">copiar</button></div>
+    <div class="plain-row" onclick="goto('datosPersonales')"><div class="lbl">👤 Datos personales</div><span class="chevron">›</span></div>
+    <div class="plain-row" onclick="goto('seguridad')"><div class="lbl">🔒 Seguridad y contraseña</div><span class="chevron">›</span></div>
+    <div class="plain-row" onclick="goto('selectorHogares')"><div class="lbl">🏠 Mis hogares</div><span class="chevron">›</span></div>
+    <div class="plain-row disabled"><div class="lbl">❓ Ayuda y soporte</div><span class="chevron">›</span></div>
+    <div class="btn-outline full" style="margin-top:16px;color:var(--red-ink);" onclick="cerrarSesion()">Cerrar sesión</div>
+  </div>`;
+}
+function copiarId(id){
+  navigator.clipboard.writeText(id).then(()=>toast('ID copiado')).catch(()=>toast('No se pudo copiar'));
+}
+
+function screenDatosPersonales(){
+  const u = state.usuario;
+  const tipoLabel = (TIPOS_DOCUMENTO.find(t => t.code === u.tipoDocumento) || {}).label || u.tipoDocumento || '-';
+  return `
+  ${backLink()}
+  <div class="card">
+    <h1 class="title">Datos personales</h1>
+    <p class="subtitle">Esta es la información con la que te registraste</p>
+    <label>Nombre completo</label>
+    <input type="text" value="${escapeHtml(u.nombre || '')}" disabled>
+    <label>Tipo de documento</label>
+    <input type="text" value="${escapeHtml(tipoLabel)}" disabled>
+    <label>Número de documento</label>
+    <input type="text" value="${escapeHtml(u.numeroDocumento || '')}" disabled>
+    <label>Correo electrónico</label>
+    <input type="text" value="${escapeHtml(u.correo || '')}" disabled>
+    <label>Número de celular</label>
+    <input type="text" value="${escapeHtml(u.celular || '')}" disabled>
+  </div>`;
+}
+
+function screenSeguridad(err){
+  return `
+  ${backLink()}
+  <div class="card">
+    <h1 class="title">Seguridad y contraseña</h1>
+    <p class="subtitle">Ingresa tu contraseña actual y la nueva contraseña</p>
+    <label>Contraseña actual</label>
+    ${pwField('f-pw-actual', 'Tu contraseña actual')}
+    <label>Nueva contraseña</label>
+    ${pwField('f-pw-nueva', 'Mínimo 8 caracteres')}
+    <label>Confirmar nueva contraseña</label>
+    ${pwField('f-pw-nueva-confirm', 'Repite la nueva contraseña')}
+    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
+    <button class="btn-black" onclick="doCambiarPassword()">Cambiar contraseña</button>
+  </div>`;
+}
+async function doCambiarPassword(){
+  const passwordActual = document.getElementById('f-pw-actual').value;
+  const passwordNueva = document.getElementById('f-pw-nueva').value;
+  const passwordNuevaConfirm = document.getElementById('f-pw-nueva-confirm').value;
+  if (passwordNueva !== passwordNuevaConfirm) {
+    return render(screenSeguridad('Las contraseñas nuevas no coinciden'));
+  }
+  try{
+    await api('/api/auth/cambiar-password', { method:'POST', body: JSON.stringify({ passwordActual, passwordNueva }) });
+    toast('Contraseña actualizada');
+    goto('perfil', false);
+  }catch(e){
+    render(screenSeguridad(e.message));
+  }
+}
+function cerrarSesion(){
+  state.token = null;
+  state.usuario = null;
+  state.hogarActivo = null;
+  state.history = [];
+  localStorage.removeItem('pg_token');
+  goto('login', false);
+}
+
+/* ---------- RENDER DISPATCH ---------- */
+
+function render(html){
+  const app = document.getElementById('phone');
+  if (typeof html === 'string') { app.innerHTML = html; return; }
+  switch(state.screen){
+    case 'registro': app.innerHTML = screenRegistro(); break;
+    case 'login': app.innerHTML = screenLogin(); break;
+    case 'olvidePassword': app.innerHTML = screenOlvidePassword(); break;
+    case 'restablecerPassword': app.innerHTML = screenRestablecerPassword(); break;
+    case 'confirmarCorreo': app.innerHTML = screenConfirmarCorreo(); break;
+    case 'confirmarCelular': app.innerHTML = screenConfirmarCelular(); break;
+    case 'selectorHogares': app.innerHTML = screenSelectorHogares(); break;
+    case 'crearHogar': app.innerHTML = screenCrearHogar(); break;
+    case 'home': app.innerHTML = screenHome(); break;
+    case 'agregarServicio': app.innerHTML = screenAgregarServicio(); break;
+    case 'facturaVeolia': app.innerHTML = screenFacturaVeolia(); break;
+    case 'historial': app.innerHTML = screenHistorial(); break;
+    case 'miembros': app.innerHTML = screenMiembros(); break;
+    case 'invitarMiembro': app.innerHTML = screenInvitarMiembro(); break;
+    case 'notificaciones': app.innerHTML = screenNotificaciones(); break;
+    case 'oficinas': app.innerHTML = screenOficinas(); break;
+    case 'perfil': app.innerHTML = screenPerfil(); break;
+    case 'datosPersonales': app.innerHTML = screenDatosPersonales(); break;
+    case 'seguridad': app.innerHTML = screenSeguridad(); break;
+    default: app.innerHTML = screenRegistro();
+  }
+}
+
+/* ---------- BOOT ---------- */
+
+(async function boot(){
+  if (state.token) {
+    try {
+      state.usuario = await api('/api/auth/me');
+      await abrirSelectorHogares();
+      return;
+    } catch {
+      state.token = null;
+      localStorage.removeItem('pg_token');
+    }
+  }
+  render();
+})();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+}
+</script>
+</body>
+</html>

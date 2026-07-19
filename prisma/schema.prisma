@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                String   @id @default(uuid())
+  nombre            String
+  correo            String   @unique
+  correoVerificado  Boolean  @default(false)
+  celular           String   @unique
+  celularVerificado Boolean  @default(false)
+  tipoDocumento     String?
+  numeroDocumento   String?
+  passwordHash      String
+  createdAt         DateTime @default(now())
+
+  miembrosHogar MiembroHogar[]
+  hogaresCreados Hogar[]       @relation("HogarCreador")
+}
+
+model Hogar {
+  id          String   @id @default(uuid())
+  nombre      String
+  creadoPor   String
+  creador     Usuario  @relation("HogarCreador", fields: [creadoPor], references: [id])
+  createdAt   DateTime @default(now())
+
+  miembros        MiembroHogar[]
+  cuentasServicio CuentaServicio[]
+  invitaciones    InvitacionHogar[]
+}
+
+model MiembroHogar {
+  id         String   @id @default(uuid())
+  hogarId    String
+  usuarioId  String
+  rol        RolHogar @default(PUEDE_PAGAR)
+
+  hogar   Hogar   @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@unique([hogarId, usuarioId])
+}
+
+enum RolHogar {
+  DUENO
+  PUEDE_PAGAR
+  SOLO_VER
+}
+
+// Invitación a unirse a un hogar, guardada por correo o celular (no por
+// usuarioId) para que funcione igual si la persona ya tiene cuenta o si
+// todavía no se ha registrado: al iniciar sesión, cualquiera revisa sus
+// invitaciones pendientes buscando por su propio correo/celular.
+model InvitacionHogar {
+  id       String            @id @default(uuid())
+  hogarId  String
+  correo   String?
+  celular  String?
+  estado   EstadoInvitacion  @default(PENDIENTE)
+  creadaEn DateTime          @default(now())
+
+  hogar Hogar @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+}
+
+enum EstadoInvitacion {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+}
+
+model CuentaServicio {
+  id             String       @id @default(uuid())
+  hogarId        String
+  tipo           TipoServicio
+  empresa        String
+  numeroCuenta   String
+  alias          String?
+  pagoAutomatico Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  hogar Hogar  @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+  facturaVeolia FacturaVeolia?
+}
+
+// Snapshot de la última factura consultada en Veolia Sabana para una cuenta de
+// Agua: todos los datos del PDF (fechas, referencia, valores) y el histórico
+// de facturación de los últimos meses que trae el propio recibo, para poder
+// mostrar la evolución en nuestro historial. El pago real se hace por fuera
+// de la app (Similpay/PSE); no guardamos nada financiero del usuario.
+model FacturaVeolia {
+  id               String    @id @default(uuid())
+  cuentaId         String    @unique
+  cuenta           CuentaServicio @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  numeroDocumento  String?
+  numeroFactura    String?
+  referenciaPago   String?
+  fechaEmision     DateTime?
+  periodoFacturado String?
+  fechaMaximaPago  DateTime?
+  fechaSuspension  DateTime?
+  valorAcueducto   Decimal?
+  valorAseo        Decimal?
+  totalPagar       Decimal?
+  consumoM3        Decimal?
+  historico        Json?
+  actualizadoEn    DateTime  @updatedAt
+}
+
+enum TipoServicio {
+  LUZ
+  AGUA
+  GAS
+  INTERNET
+  CELULAR
+}
