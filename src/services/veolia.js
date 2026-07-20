@@ -54,38 +54,48 @@ function parseMonto(str) {
   return Number.isNaN(n) ? null : n;
 }
 
-function extraerDatosFactura(text) {
-  const datos = {};
+// pdf-parse no siempre extrae las tildes igual entre una factura y otra
+// (por ejemplo "Fecha Máxima" a veces sale con la tilde y a veces sin ella,
+// o con una codificación distinta), así que las expresiones de abajo buscan
+// sobre una versión sin tildes y sin distinguir mayúsculas del texto, para
+// no depender de que se haya extraído exactamente igual cada vez.
+function quitarTildes(text) {
+  return text.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
 
-  const totalMatch = text.match(/Valor Acueducto y Alcantarillado\s*([\d.,]+)\s*Valor Aseo\s*([\d.,]*)\s*Total\s*([\d.,]+)/);
+function extraerDatosFactura(textoOriginal) {
+  const datos = {};
+  const text = quitarTildes(textoOriginal);
+
+  const totalMatch = text.match(/Valor Acueducto y Alcantarillado\s*([\d.,]+)\s*Valor Aseo\s*([\d.,]*)\s*Total\s*([\d.,]+)/i);
   if (totalMatch) {
     datos.valorAcueducto = parseMonto(totalMatch[1]);
     datos.valorAseo = parseMonto(totalMatch[2]);
     datos.totalPagar = parseMonto(totalMatch[3]);
   }
 
-  const docMatch = text.match(/No Documento Equivalente:\s*Suscriptor:\s*([A-Z0-9]+)\s*(\d+)/);
+  const docMatch = text.match(/No Documento Equivalente:\s*Suscriptor:\s*([A-Z0-9]+)\s*(\d+)/i);
   if (docMatch) datos.numeroDocumento = docMatch[1];
 
   const facturaMatch = text.match(/No\.\s+(\d{5,})/);
   if (facturaMatch) datos.numeroFactura = facturaMatch[1];
 
-  const referenciaMatch = text.match(/Referencia de pago\s*(\d+)/);
+  const referenciaMatch = text.match(/Referencia de pago\s*(\d+)/i);
   if (referenciaMatch) datos.referenciaPago = referenciaMatch[1];
 
-  const emisionMatch = text.match(/Fecha Emisión\s*(\d{4}-\d{2}-\d{2})/);
+  const emisionMatch = text.match(/Fecha Emision[:\s]*(\d{4}-\d{2}-\d{2})/i);
   if (emisionMatch) datos.fechaEmision = emisionMatch[1];
 
-  const periodoMatch = text.match(/Periodo Facturado\s*(\d{4}\/\S+)/);
+  const periodoMatch = text.match(/Periodo Facturado\s*(\d{4}\/\S+)/i);
   if (periodoMatch) datos.periodoFacturado = periodoMatch[1];
 
-  const fechaMaximaMatch = text.match(/Fecha Máxima de pago\s*(\d{4}-\d{2}-\d{2})/);
+  const fechaMaximaMatch = text.match(/Fecha Maxima de pago[:\s]*(\d{4}-\d{2}-\d{2})/i);
   if (fechaMaximaMatch) datos.fechaMaximaPago = fechaMaximaMatch[1];
 
-  const suspensionMatch = text.match(/Se suspende a partir de\s*(\d{4}-\d{2}-\d{2})/);
+  const suspensionMatch = text.match(/Se suspende a partir de[:\s]*(\d{4}-\d{2}-\d{2})/i);
   if (suspensionMatch) datos.fechaSuspension = suspensionMatch[1];
 
-  const consumoMatch = text.match(/\bConsumo\s*->\s*(\d+(?:\.\d+)?)/);
+  const consumoMatch = text.match(/\bConsumo\s*->\s*(\d+(?:\.\d+)?)/i);
   if (consumoMatch) datos.consumoM3 = Number(consumoMatch[1]);
 
   // Histórico de facturación: una línea con 6-7 periodos "YYYYMM" seguida de
