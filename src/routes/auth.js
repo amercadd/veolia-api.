@@ -7,6 +7,7 @@ const { requireAuth } = require('../middleware/auth');
 const { enviarCodigoCorreo, enviarCodigoRecuperacion } = require('../services/email');
 const { enviarCodigoSms } = require('../services/sms');
 const { limiteEnvioCodigo, limiteOlvidePassword, limiteVerificacion, limiteLogin } = require('../middleware/rateLimit');
+const { registrarEvento } = require('../services/eventos');
 
 // En producción, los códigos se guardan en una tabla separada con expiración
 // y se envían por proveedor de correo/SMS real. Aquí se simula en memoria.
@@ -38,6 +39,7 @@ router.post('/registro', limiteEnvioCodigo, async (req, res, next) => {
     const usuario = await prisma.usuario.create({
       data: { nombre, correo, celular, tipoDocumento, numeroDocumento, passwordHash },
     });
+    registrarEvento(usuario.id, 'REGISTRO');
 
     const codigoCorreo = generarCodigo();
     const codigoCelular = generarCodigo();
@@ -177,6 +179,9 @@ router.post('/login', limiteLogin, async (req, res, next) => {
 
     const passwordValida = await bcrypt.compare(password, usuario.passwordHash);
     if (!passwordValida) throw new ApiError(401, 'Credenciales inválidas');
+
+    await prisma.usuario.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date() } });
+    registrarEvento(usuario.id, 'LOGIN');
 
     const token = jwt.sign({ sub: usuario.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({

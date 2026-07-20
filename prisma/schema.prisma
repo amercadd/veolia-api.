@@ -8,21 +8,36 @@ datasource db {
 }
 
 model Usuario {
-  id                String   @id @default(uuid())
+  id                String    @id @default(uuid())
   nombre            String
-  correo            String   @unique
-  correoVerificado  Boolean  @default(false)
-  celular           String   @unique
-  celularVerificado Boolean  @default(false)
+  correo            String    @unique
+  correoVerificado  Boolean   @default(false)
+  celular           String    @unique
+  celularVerificado Boolean   @default(false)
   tipoDocumento     String?
   numeroDocumento   String?
   passwordHash      String
-  reminderDias      Int      @default(3)
-  createdAt         DateTime @default(now())
+  reminderDias      Int       @default(3)
+  createdAt         DateTime  @default(now())
+  ultimoLogin       DateTime?
+  ultimaActividad   DateTime?
 
   miembrosHogar MiembroHogar[]
   hogaresCreados Hogar[]       @relation("HogarCreador")
   suscripcionesPush PushSubscription[]
+  eventos EventoUso[]
+}
+
+// Registro de eventos de uso (login, registro, creacion de hogar, etc.) para
+// poder graficar actividad en el tiempo (ej. en Power BI) en vez de solo
+// tener el estado actual de cada tabla.
+model EventoUso {
+  id        String   @id @default(uuid())
+  usuarioId String?
+  tipo      String
+  creadoEn  DateTime @default(now())
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
 }
 
 // Suscripción de notificaciones push del navegador (una por dispositivo en

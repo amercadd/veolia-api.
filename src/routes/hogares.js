@@ -6,6 +6,7 @@ const { enviarInvitacionHogar } = require('../services/email');
 const { enviarInvitacionHogarSms } = require('../services/sms');
 const { limiteEnvioCodigo } = require('../middleware/rateLimit');
 const { revisarRecordatoriosSiNuevoDia } = require('../services/recordatoriosScheduler');
+const { registrarEvento } = require('../services/eventos');
 
 // Acepta un correo o un número de celular en un solo campo y dice cuál es.
 function detectarContacto(valor) {
@@ -36,6 +37,7 @@ router.post('/', requireVerified, async (req, res, next) => {
       },
       include: { miembros: true },
     });
+    registrarEvento(req.usuario.id, 'HOGAR_CREADO');
     res.status(201).json(hogar);
   } catch (err) {
     next(err);

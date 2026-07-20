@@ -3,6 +3,7 @@ const prisma = require('../db');
 const { ApiError } = require('../middleware/errorHandler');
 const { requireAuth, requireVerified } = require('../middleware/auth');
 const { obtenerFacturaVeolia } = require('../services/veolia');
+const { registrarEvento } = require('../services/eventos');
 
 const TIPOS_VALIDOS = ['LUZ', 'AGUA', 'GAS', 'INTERNET', 'CELULAR'];
 
@@ -60,6 +61,7 @@ router.post('/hogares/:hogarId', requireVerified, async (req, res, next) => {
     if (tipo === 'AGUA' && empresa === 'Veolia Sabana' && facturaVeolia) {
       await guardarFacturaVeolia(cuenta.id, facturaVeolia);
     }
+    registrarEvento(req.usuario.id, 'SUSCRIPCION_AGREGADA');
 
     res.status(201).json(cuenta);
   } catch (err) {
