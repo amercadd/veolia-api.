@@ -991,10 +991,21 @@ function descargarBlob(url, filename){
   a.click();
   a.remove();
 }
-function verPdfFacturaVeolia(){
+// Los datos cacheados de una suscripción (los que se usan al abrir el hogar)
+// no incluyen el PDF en sí, solo los valores ya extraídos — el PDF completo
+// solo viaja en una consulta en vivo. Si falta, lo consultamos aquí mismo
+// antes de mostrarlo/descargarlo.
+async function asegurarPdfFacturaVeolia(){
+  if (state.facturaVeolia.factura.pdfBase64) return;
+  toast('Consultando el PDF con Veolia Sabana...');
+  const factura = await api(`/api/cuentas/${state.facturaVeolia.cuenta.id}/factura-veolia`);
+  state.facturaVeolia.factura = factura;
+}
+async function verPdfFacturaVeolia(){
   // Un blob: URL abierto en una pestaña nueva suele quedar en blanco en Chrome
   // (el blob vive en el proceso de la pestaña original), así que se muestra
   // aquí mismo en un visor dentro de la app.
+  try{ await asegurarPdfFacturaVeolia(); }catch(e){ toast(e.message); return; }
   const url = pdfFacturaVeoliaBlobUrl();
   mostrarPdfModal(url);
 }
@@ -1020,7 +1031,8 @@ function cerrarPdfModal(){
   if (el) el.remove();
   if (window._pdfModalUrl) { URL.revokeObjectURL(window._pdfModalUrl); window._pdfModalUrl = null; }
 }
-function descargarPdfFacturaVeolia(){
+async function descargarPdfFacturaVeolia(){
+  try{ await asegurarPdfFacturaVeolia(); }catch(e){ toast(e.message); return; }
   const url = pdfFacturaVeoliaBlobUrl();
   descargarBlob(url, `factura-veolia-${state.facturaVeolia.cuenta.numeroCuenta}.pdf`);
   URL.revokeObjectURL(url);
