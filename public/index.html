@@ -709,23 +709,52 @@ function screenSelectorHogares(){
   </div>`;
 }
 
-function screenCrearHogar(err){
+function screenCrearHogar(err, loading, prefill){
+  const p = prefill || {};
   return `
   ${backLink()}
   <div class="card">
     <h1 class="title">Crear nuevo hogar</h1>
     <label>Nombre del hogar</label>
-    <input type="text" id="f-hogar-nombre" placeholder="Casa Principal">
+    <input type="text" id="f-hogar-nombre" placeholder="Casa Principal" value="${escapeHtml(p.nombre || '')}" ${loading?'disabled':''}>
+    <label>Número suscriptor (parte superior derecha de su recibo)</label>
+    <p class="subtitle" style="margin-top:-4px;">Acueducto Veolia Sabana. Cada hogar tiene una única suscripción.</p>
+    <input type="text" id="f-hogar-numero" placeholder="21000000" value="${escapeHtml(p.numeroCuenta || '')}" ${loading?'disabled':''}>
+    <label>Alias (opcional)</label>
+    <input type="text" id="f-hogar-alias" placeholder="Agua casa" value="${escapeHtml(p.alias || '')}" ${loading?'disabled':''}>
     ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
-    <button class="btn-black" onclick="doCrearHogar()">Crear hogar</button>
+    <button class="btn-black" onclick="doCrearHogar()" ${loading?'disabled':''}>${loading ? loading : 'Crear hogar'}</button>
   </div>`;
 }
 async function doCrearHogar(){
   const nombre = document.getElementById('f-hogar-nombre').value.trim();
+  const numeroCuenta = document.getElementById('f-hogar-numero').value.trim();
+  const alias = document.getElementById('f-hogar-alias').value.trim();
+  const prefill = { nombre, numeroCuenta, alias };
+
+  if (!nombre) { render(screenCrearHogar('El nombre del hogar es obligatorio', null, prefill)); return; }
+  if (!numeroCuenta) { render(screenCrearHogar('El número de suscriptor es obligatorio', null, prefill)); return; }
+
+  render(screenCrearHogar(null, 'Consultando tu factura con Veolia Sabana...', prefill));
+  let factura;
+  try {
+    factura = await api('/api/veolia/factura', { method:'POST', body: JSON.stringify({ numeroSuscriptor: numeroCuenta }) });
+  } catch (e) {
+    render(screenCrearHogar(e.message, null, prefill));
+    return;
+  }
+
   try{
-    await api('/api/hogares', { method:'POST', body: JSON.stringify({ nombre }) });
-    await abrirSelectorHogares();
-  }catch(e){ render(screenCrearHogar(e.message)); }
+    const hogar = await api('/api/hogares', { method:'POST', body: JSON.stringify({ nombre }) });
+    const { pdfBase64, ...facturaDatos } = factura;
+    const cuenta = await api(`/api/cuentas/hogares/${hogar.id}`, { method:'POST', body: JSON.stringify({ tipo:'AGUA', empresa:'Veolia Sabana', numeroCuenta, alias, facturaVeolia: facturaDatos }) });
+    toast('Hogar creado');
+    await abrirHogar(hogar.id, false);
+    state.facturaVeolia = { cuenta, factura };
+    goto('facturaVeolia', false);
+  }catch(e){
+    render(screenCrearHogar(e.message, null, prefill));
+  }
 }
 
 async function abrirHogar(id, push = true){
@@ -758,7 +787,6 @@ function screenHome(){
   const h = state.hogarActivo;
   const totalMes = totalFacturasPendientes();
   const pend = state.pendientes;
-  const esDueno = (h.miembros || []).some(m => m.usuarioId === state.usuario.id && m.rol === 'DUENO');
   const rows = pend.slice(0,5).map(c => {
     const ic = TIPO_ICON[c.tipo];
     const esVeolia = c.tipo === 'AGUA' && c.empresa === 'Veolia Sabana';
@@ -770,7 +798,6 @@ function screenHome(){
         <div class="nom">${escapeHtml(c.empresa)}</div>
         <div class="sub">${c.alias ? escapeHtml(c.alias) : 'Suscriptor ' + escapeHtml(c.numeroCuenta)}${c.montoPendiente != null ? ' · ' + money(c.montoPendiente) : ''}</div>
       </div>
-      ${esDueno ? `<button class="btn-outline small" style="color:var(--red-ink);" onclick="eliminarServicioHogar('${c.id}')" title="Eliminar suscripción">🗑</button>` : ''}
     </div>`;
   }).join('');
   return `
@@ -791,7 +818,6 @@ function screenHome(){
     ${pend.length ? `<div class="venc-title">Tus suscripciones</div>${rows}` : ''}
     <div class="nav-grid">
       <button class="nav-item" onclick="abrirHistorial()"><span class="ic">🕒</span><span>Historial</span></button>
-      <button class="nav-item" onclick="goto('agregarServicio')"><span class="ic">➕</span><span>Agregar</span></button>
       <button class="nav-item" onclick="goto('miembros')"><span class="ic">👥</span><span>Miembros</span></button>
       <button class="nav-item" onclick="goto('notificaciones')"><span class="ic">⚙️</span><span>Ajustes</span></button>
     </div>
@@ -876,19 +902,6 @@ function screenOficinas(){
   </div>`;
 }
 
-async function eliminarServicioHogar(cuentaId){
-  const cuenta = state.cuentasActivo.find(c => c.id === cuentaId);
-  const nombre = cuenta ? cuenta.empresa : 'este servicio';
-  if (!confirm(`¿Eliminar ${nombre}? Esta acción no se puede deshacer.`)) return;
-  try {
-    await api(`/api/cuentas/${cuentaId}`, { method: 'DELETE' });
-    toast('Servicio eliminado');
-    await abrirHogar(state.hogarActivo.id, false);
-  } catch (e) {
-    toast(e.message);
-  }
-}
-
 async function verFacturaVeoliaDesdeHome(cuentaId){
   const cuenta = state.pendientes.find(c => c.id === cuentaId) || state.cuentasActivo.find(c => c.id === cuentaId);
   if (!cuenta) return;
@@ -904,51 +917,6 @@ async function verFacturaVeoliaDesdeHome(cuentaId){
   }
   state.facturaVeolia = { cuenta, factura };
   goto('facturaVeolia', false);
-}
-
-/* ---------- AGREGAR SUSCRIPCIÓN (solo Agua / Veolia Sabana por ahora) ---------- */
-
-function screenAgregarServicio(err, loading, prefill){
-  const p = prefill || {};
-  return `
-  ${backLink()}
-  <div class="card">
-    <h1 class="title">Agregar suscripción</h1>
-    <p class="subtitle">Acueducto Veolia Sabana</p>
-    <label>Número suscriptor (parte superior derecha de su recibo)</label>
-    <input type="text" id="f-serv-numero" placeholder="21000000" value="${escapeHtml(p.numeroCuenta || '')}" ${loading?'disabled':''}>
-    <label>Alias (opcional)</label>
-    <input type="text" id="f-serv-alias" placeholder="Agua casa" value="${escapeHtml(p.alias || '')}" ${loading?'disabled':''}>
-    ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
-    <button class="btn-black" onclick="doAgregarServicio()" ${loading?'disabled':''}>${loading ? loading : 'Agregar suscripción'}</button>
-  </div>`;
-}
-async function doAgregarServicio(){
-  const tipo = 'AGUA';
-  const empresa = 'Veolia Sabana';
-  const numeroCuenta = document.getElementById('f-serv-numero').value.trim();
-  const alias = document.getElementById('f-serv-alias').value.trim();
-  const prefill = { numeroCuenta, alias };
-
-  render(screenAgregarServicio(null, 'Consultando tu factura con Veolia Sabana...', prefill));
-  let factura;
-  try {
-    factura = await api('/api/veolia/factura', { method:'POST', body: JSON.stringify({ numeroSuscriptor: numeroCuenta }) });
-  } catch (e) {
-    render(screenAgregarServicio(e.message, null, prefill));
-    return;
-  }
-
-  try{
-    const { pdfBase64, ...facturaDatos } = factura;
-    const cuenta = await api(`/api/cuentas/hogares/${state.hogarActivo.id}`, { method:'POST', body: JSON.stringify({ tipo, empresa, numeroCuenta, alias, facturaVeolia: facturaDatos }) });
-    toast('Suscripción agregada');
-    await abrirHogar(state.hogarActivo.id, false);
-    state.facturaVeolia = { cuenta, factura };
-    goto('facturaVeolia', false);
-  }catch(e){
-    render(screenAgregarServicio(e.message, null, prefill));
-  }
 }
 
 function screenFacturaVeolia(){
@@ -1350,7 +1318,6 @@ function render(html){
     case 'selectorHogares': app.innerHTML = screenSelectorHogares(); break;
     case 'crearHogar': app.innerHTML = screenCrearHogar(); break;
     case 'home': app.innerHTML = screenHome(); break;
-    case 'agregarServicio': app.innerHTML = screenAgregarServicio(); break;
     case 'facturaVeolia': app.innerHTML = screenFacturaVeolia(); break;
     case 'historial': app.innerHTML = screenHistorial(); break;
     case 'miembros': app.innerHTML = screenMiembros(); break;
