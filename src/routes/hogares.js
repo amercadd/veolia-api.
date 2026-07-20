@@ -5,6 +5,7 @@ const { requireAuth, requireVerified } = require('../middleware/auth');
 const { enviarInvitacionHogar } = require('../services/email');
 const { enviarInvitacionHogarSms } = require('../services/sms');
 const { limiteEnvioCodigo } = require('../middleware/rateLimit');
+const { revisarRecordatoriosSiNuevoDia } = require('../services/recordatoriosScheduler');
 
 // Acepta un correo o un número de celular en un solo campo y dice cuál es.
 function detectarContacto(valor) {
@@ -43,6 +44,7 @@ router.post('/', requireVerified, async (req, res, next) => {
 
 router.get('/', async (req, res, next) => {
   try {
+    revisarRecordatoriosSiNuevoDia(); // oportunista, no bloquea la respuesta
     const hogares = await prisma.hogar.findMany({
       where: { miembros: { some: { usuarioId: req.usuario.id } } },
       include: { miembros: true },

@@ -194,8 +194,23 @@ router.post('/login', limiteLogin, async (req, res, next) => {
 });
 
 router.get('/me', requireAuth, (req, res) => {
-  const { id, nombre, correo, correoVerificado, celular, celularVerificado, tipoDocumento, numeroDocumento } = req.usuario;
-  res.json({ id, nombre, correo, correoVerificado, celular, celularVerificado, tipoDocumento, numeroDocumento });
+  const { id, nombre, correo, correoVerificado, celular, celularVerificado, tipoDocumento, numeroDocumento, reminderDias } = req.usuario;
+  res.json({ id, nombre, correo, correoVerificado, celular, celularVerificado, tipoDocumento, numeroDocumento, reminderDias });
+});
+
+router.patch('/preferencias', requireAuth, async (req, res, next) => {
+  try {
+    const { reminderDias } = req.body;
+    if (![0, 1, 3].includes(reminderDias)) throw new ApiError(400, 'Valor de recordatorio inválido');
+
+    const usuario = await prisma.usuario.update({
+      where: { id: req.usuario.id },
+      data: { reminderDias },
+    });
+    res.json({ reminderDias: usuario.reminderDias });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post('/cambiar-password', requireAuth, async (req, res, next) => {

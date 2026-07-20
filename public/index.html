@@ -260,7 +260,7 @@ const state = {
   hogarActivo: null,
   cuentasActivo: [],
   pendientes: [],
-  reminderDias: localStorage.getItem('pg_reminder') || '3',
+  reminderDias: '3',
 };
 
 function escapeHtml(str){
@@ -575,6 +575,10 @@ async function abrirSelectorHogares(){
   if (!state.usuario) {
     try { state.usuario = await api('/api/auth/me'); } catch { return goto('registro', false); }
   }
+  if (state.usuario.reminderDias == null) {
+    try { state.usuario = await api('/api/auth/me'); } catch {}
+  }
+  state.reminderDias = String(state.usuario.reminderDias ?? 3);
   const hogares = await api('/api/hogares');
   const conStats = await Promise.all(hogares.map(async h => {
     let cuentas = [];
@@ -1183,6 +1187,18 @@ async function cancelarInvitacion(invId){
 /* ---------- NOTIFICACIONES / AJUSTES ---------- */
 
 function screenNotificaciones(){
+  const soportaPush = 'serviceWorker' in navigator && 'PushManager' in window;
+  const permiso = soportaPush ? Notification.permission : 'unsupported';
+  const estadoPush = permiso === 'granted' ? `
+      <div class="receipt-box" style="margin-top:18px;">
+        <div class="receipt-kv"><span>🔔 Notificaciones</span><span style="color:var(--blue-accent);font-weight:600;">Activadas en este dispositivo</span></div>
+      </div>`
+    : permiso === 'denied' ? `
+      <p class="subtitle" style="margin-top:18px;">Bloqueaste las notificaciones para esta app. Actívalas desde los ajustes de notificaciones de tu celular para recibir recordatorios.</p>`
+    : permiso === 'unsupported' ? `
+      <p class="subtitle" style="margin-top:18px;">Tu navegador no soporta notificaciones push.</p>`
+    : `
+      <button class="btn-black" style="margin-top:18px;" onclick="activarNotificacionesPush()">🔔 Activar notificaciones en este dispositivo</button>`;
   return `
   ${backLink()}
   <div class="card">
@@ -1193,12 +1209,42 @@ function screenNotificaciones(){
       <div class="chip ${state.reminderDias==='1'?'active':''}" onclick="setReminder('1')">1 día</div>
       <div class="chip ${state.reminderDias==='0'?'active':''}" onclick="setReminder('0')">El mismo día</div>
     </div>
+    ${estadoPush}
   </div>`;
 }
-function setReminder(v){
+async function setReminder(v){
   state.reminderDias = v;
-  localStorage.setItem('pg_reminder', v);
   render();
+  try {
+    await api('/api/auth/preferencias', { method:'PATCH', body: JSON.stringify({ reminderDias: Number(v) }) });
+  } catch (e) { toast(e.message); }
+}
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+async function activarNotificacionesPush(){
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    toast('Tu navegador no soporta notificaciones push');
+    return;
+  }
+  try{
+    const permiso = await Notification.requestPermission();
+    if (permiso !== 'granted') { toast('No diste permiso para las notificaciones'); render(); return; }
+    const reg = await navigator.serviceWorker.ready;
+    const { publicKey } = await api('/api/push/vapid-public-key');
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+    await api('/api/push/subscribe', { method:'POST', body: JSON.stringify(sub.toJSON()) });
+    toast('Notificaciones activadas');
+    render();
+  }catch(e){ toast('No se pudo activar: ' + e.message); }
 }
 
 /* ---------- PERFIL ---------- */

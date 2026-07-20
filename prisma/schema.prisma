@@ -17,10 +17,25 @@ model Usuario {
   tipoDocumento     String?
   numeroDocumento   String?
   passwordHash      String
+  reminderDias      Int      @default(3)
   createdAt         DateTime @default(now())
 
   miembrosHogar MiembroHogar[]
   hogaresCreados Hogar[]       @relation("HogarCreador")
+  suscripcionesPush PushSubscription[]
+}
+
+// Suscripción de notificaciones push del navegador (una por dispositivo en
+// el que el usuario haya aceptado recibir notificaciones).
+model PushSubscription {
+  id        String   @id @default(uuid())
+  usuarioId String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 }
 
 model Hogar {

@@ -7,3 +7,25 @@ self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim(
 self.addEventListener('fetch', (event) => {
   event.respondWith(fetch(event.request));
 });
+
+self.addEventListener('push', (event) => {
+  let data = { title: 'Veolia Sabana', body: 'Tienes una notificación nueva.' };
+  try { data = event.data.json(); } catch {}
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      if (clientList.length > 0) return clientList[0].focus();
+      return self.clients.openWindow('/');
+    })
+  );
+});
