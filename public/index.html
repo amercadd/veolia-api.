@@ -104,19 +104,24 @@
   }
 
   /* selector hogares */
-  .hogar-row{
-    display:flex; align-items:center; gap:14px; padding:16px; border-radius:16px;
-    border:2px solid transparent; background:#fff; margin-bottom:12px; cursor:pointer;
+  .hogar-card{
+    background:#fff; border-radius:16px; border:2px solid transparent;
+    margin-bottom:12px; overflow:hidden;
   }
-  .hogar-row.activo{ border-color:#1c3a5c; }
+  .hogar-card.activo{ border-color:#1c3a5c; }
+  .hogar-row{ display:flex; align-items:center; gap:14px; padding:16px; cursor:pointer; }
   .hogar-icon{ font-size:1.5rem; width:44px; height:44px; border-radius:50%; background:#eef1f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .hogar-info{ flex:1; min-width:0; }
   .hogar-info .nombre{ font-size:1.05rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .hogar-info .meta{ color:var(--muted); font-size:0.85rem; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .hogar-actions{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
-  .icon-btn{ width:30px; height:30px; border-radius:50%; border:1px solid var(--border); background:var(--pill-bg); display:flex; align-items:center; justify-content:center; font-size:0.85rem; cursor:pointer; flex-shrink:0; padding:0; }
-  .badge-activo{ background:var(--blue-badge-bg); color:var(--blue-badge-ink); font-size:0.78rem; font-weight:600; padding:6px 12px; border-radius:999px; white-space:nowrap; }
-  .chevron{ color:var(--muted); font-size:1.1rem; }
+  .badge-activo{ background:var(--blue-badge-bg); color:var(--blue-badge-ink); font-size:0.78rem; font-weight:600; padding:6px 12px; border-radius:999px; white-space:nowrap; flex-shrink:0; }
+  .chevron{ color:var(--muted); font-size:1.1rem; flex-shrink:0; }
+  .hogar-actions-row{ display:flex; gap:8px; padding:12px 16px 16px; border-top:1px solid var(--border); }
+  .hogar-actions-row button{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:9px; border-radius:10px; border:1px solid var(--border);
+    background:var(--pill-bg); font-size:0.85rem; cursor:pointer; color:var(--ink);
+  }
 
   /* home */
   .home-header{ display:flex; align-items:flex-start; justify-content:space-between; }
@@ -679,20 +684,23 @@ function screenSelectorHogares(){
   `).join('');
   const rows = state.hogares.map(h => {
     const esDueno = (h.miembros || []).some(m => m.usuarioId === state.usuario.id && m.rol === 'DUENO');
+    const esActivo = state.hogarActivo && state.hogarActivo.id===h.id;
     return `
-    <div class="hogar-row ${state.hogarActivo && state.hogarActivo.id===h.id ? 'activo':''}" onclick="abrirHogar('${h.id}')">
-      <div class="hogar-icon">🏠</div>
-      <div class="hogar-info">
-        <div class="nombre">${escapeHtml(h.nombre)}</div>
-        <div class="meta">${h.serviciosCount} suscripción${h.serviciosCount===1?'':'es'}</div>
+    <div class="hogar-card ${esActivo ? 'activo':''}">
+      <div class="hogar-row" onclick="abrirHogar('${h.id}')">
+        <div class="hogar-icon">🏠</div>
+        <div class="hogar-info">
+          <div class="nombre">${escapeHtml(h.nombre)}</div>
+          <div class="meta">${h.serviciosCount} suscripción${h.serviciosCount===1?'':'es'}</div>
+        </div>
+        ${esActivo ? '<span class="badge-activo">Activo</span>' : '<span class="chevron">›</span>'}
       </div>
       ${esDueno ? `
-      <div class="hogar-actions">
-        <button class="icon-btn" onclick="event.stopPropagation(); renombrarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')" title="Renombrar hogar">✏️</button>
-        <button class="icon-btn" style="color:var(--red-ink);" onclick="event.stopPropagation(); eliminarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')" title="Eliminar hogar">🗑</button>
+      <div class="hogar-actions-row">
+        <button onclick="renombrarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')">✏️ Renombrar</button>
+        <button style="color:var(--red-ink);" onclick="eliminarHogar('${h.id}', '${escapeHtml(h.nombre).replace(/'/g,"\\'")}')">🗑 Eliminar</button>
       </div>
       ` : ''}
-      ${state.hogarActivo && state.hogarActivo.id===h.id ? '<span class="badge-activo">Activo</span>' : '<span class="chevron">›</span>'}
     </div>
   `;
   }).join('');
