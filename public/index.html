@@ -311,7 +311,7 @@ function fmtFecha(d){
   return `${String(dt.getDate()).padStart(2,'0')} ${MESES[dt.getMonth()]} ${dt.getFullYear()}`;
 }
 function fmtFechaSolo(isoDateOnly){
-  const [y, m, d] = isoDateOnly.split('-').map(Number);
+  const [y, m, d] = isoDateOnly.slice(0, 10).split('-').map(Number);
   return `${String(d).padStart(2,'0')} ${MESES[m-1]} ${y}`;
 }
 function fmtFechaCorta(d){
