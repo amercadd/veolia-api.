@@ -215,16 +215,6 @@
   .pdf-modal-header button{ background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--muted); padding:4px 8px; }
   .pdf-modal iframe{ flex:1; border:none; width:100%; }
 
-  /* toggles */
-  .toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border); gap:12px; }
-  .toggle-row:last-child{ border-bottom:none; }
-  .toggle-row .lbl{ display:flex; align-items:center; gap:10px; font-size:0.95rem; }
-  .switch{ position:relative; width:44px; height:26px; flex-shrink:0; }
-  .switch input{ opacity:0; width:0; height:0; }
-  .slider{ position:absolute; cursor:pointer; inset:0; background:#d7d3ca; border-radius:999px; transition:0.15s; }
-  .slider:before{ content:""; position:absolute; height:20px; width:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:0.15s; }
-  .switch input:checked + .slider{ background:var(--blue-accent); }
-  .switch input:checked + .slider:before{ transform:translateX(18px); }
   .chip-row{ display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap; }
   .chip{ padding:10px 16px; border-radius:999px; border:1px solid var(--border); background:var(--pill-bg); font-size:0.88rem; cursor:pointer; }
   .chip.active{ background:var(--blue-badge-bg); color:var(--blue-badge-ink); border-color:transparent; font-weight:600; }
@@ -240,8 +230,6 @@
   .plain-row.disabled{ color:var(--muted); cursor:default; }
   .id-box{ display:flex; align-items:center; gap:8px; background:#f5f3ee; border-radius:10px; padding:8px 12px; font-size:0.78rem; color:var(--muted); margin-top:2px; }
 
-  .checkbox-row{ display:flex; align-items:center; justify-content:space-between; background:var(--pill-bg); border-radius:12px; padding:14px; margin-top:18px; }
-  .checkbox-row input{ width:18px; height:18px; }
   #dev-codes{ background:#fff7dc; border:1px dashed #d8bd5a; border-radius:12px; padding:10px 14px; font-size:0.78rem; color:#6b551a; margin-top:14px; }
   .app-credit{ position:fixed; left:0; right:0; bottom:8px; text-align:center; font-size:0.7rem; color:var(--muted); pointer-events:none; z-index:50; }
 </style>
@@ -927,10 +915,6 @@ function screenAgregarServicio(err, loading, prefill){
     <input type="text" id="f-serv-numero" placeholder="21000000" value="${escapeHtml(p.numeroCuenta || '')}" ${loading?'disabled':''}>
     <label>Alias (opcional)</label>
     <input type="text" id="f-serv-alias" placeholder="Agua casa" value="${escapeHtml(p.alias || '')}" ${loading?'disabled':''}>
-    <div class="checkbox-row">
-      <span>Activar pago automático</span>
-      <input type="checkbox" id="f-serv-auto" ${p.pagoAutomatico?'checked':''} ${loading?'disabled':''}>
-    </div>
     ${err ? `<div class="error-box">${escapeHtml(err)}</div>` : ''}
     <button class="btn-black" onclick="doAgregarServicio()" ${loading?'disabled':''}>${loading ? loading : 'Agregar suscripción'}</button>
   </div>`;
@@ -940,8 +924,7 @@ async function doAgregarServicio(){
   const empresa = 'Veolia Sabana';
   const numeroCuenta = document.getElementById('f-serv-numero').value.trim();
   const alias = document.getElementById('f-serv-alias').value.trim();
-  const pagoAutomatico = document.getElementById('f-serv-auto').checked;
-  const prefill = { numeroCuenta, alias, pagoAutomatico };
+  const prefill = { numeroCuenta, alias };
 
   render(screenAgregarServicio(null, 'Consultando tu factura con Veolia Sabana...', prefill));
   let factura;
@@ -954,7 +937,7 @@ async function doAgregarServicio(){
 
   try{
     const { pdfBase64, ...facturaDatos } = factura;
-    const cuenta = await api(`/api/cuentas/hogares/${state.hogarActivo.id}`, { method:'POST', body: JSON.stringify({ tipo, empresa, numeroCuenta, alias, pagoAutomatico, facturaVeolia: facturaDatos }) });
+    const cuenta = await api(`/api/cuentas/hogares/${state.hogarActivo.id}`, { method:'POST', body: JSON.stringify({ tipo, empresa, numeroCuenta, alias, facturaVeolia: facturaDatos }) });
     toast('Suscripción agregada');
     await abrirHogar(state.hogarActivo.id, false);
     state.facturaVeolia = { cuenta, factura };
@@ -1200,41 +1183,22 @@ async function cancelarInvitacion(invId){
 /* ---------- NOTIFICACIONES / AJUSTES ---------- */
 
 function screenNotificaciones(){
-  const rows = state.cuentasActivo.map(c => `
-    <div class="toggle-row">
-      <div class="lbl">${TIPO_ICON[c.tipo].e} ${escapeHtml(c.empresa)}</div>
-      <label class="switch">
-        <input type="checkbox" ${c.pagoAutomatico?'checked':''} onchange="togglePagoAutomatico('${c.id}', this.checked)">
-        <span class="slider"></span>
-      </label>
-    </div>
-  `).join('');
   return `
   ${backLink()}
   <div class="card">
-    <h1 class="title">Recordatorios y pago automático</h1>
+    <h1 class="title">Recordatorios</h1>
     <label>Recordarme antes del vencimiento</label>
     <div class="chip-row">
       <div class="chip ${state.reminderDias==='3'?'active':''}" onclick="setReminder('3')">3 días</div>
       <div class="chip ${state.reminderDias==='1'?'active':''}" onclick="setReminder('1')">1 día</div>
       <div class="chip ${state.reminderDias==='0'?'active':''}" onclick="setReminder('0')">El mismo día</div>
     </div>
-    <label style="margin-top:0;">Pago automático por servicio</label>
-    ${rows || '<p class="subtitle">Este hogar aún no tiene servicios.</p>'}
   </div>`;
 }
 function setReminder(v){
   state.reminderDias = v;
   localStorage.setItem('pg_reminder', v);
   render();
-}
-async function togglePagoAutomatico(cuentaId, valor){
-  try{
-    await api(`/api/cuentas/${cuentaId}`, { method:'PATCH', body: JSON.stringify({ pagoAutomatico: valor }) });
-    const idx = state.cuentasActivo.findIndex(c=>c.id===cuentaId);
-    if (idx >= 0) state.cuentasActivo[idx].pagoAutomatico = valor;
-    toast(valor ? 'Pago automático activado' : 'Pago automático desactivado');
-  }catch(e){ toast(e.message); render(); }
 }
 
 /* ---------- PERFIL ---------- */

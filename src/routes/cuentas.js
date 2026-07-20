@@ -46,13 +46,13 @@ router.post('/hogares/:hogarId', requireVerified, async (req, res, next) => {
   try {
     await verificarAccesoHogar(req.params.hogarId, req.usuario.id, ['DUENO', 'PUEDE_PAGAR']);
 
-    const { tipo, empresa, numeroCuenta, alias, pagoAutomatico, facturaVeolia } = req.body;
+    const { tipo, empresa, numeroCuenta, alias, facturaVeolia } = req.body;
     if (!TIPOS_VALIDOS.includes(tipo)) throw new ApiError(400, 'Tipo de servicio inválido');
     if (!empresa || !numeroCuenta) throw new ApiError(400, 'Empresa y número de cuenta son obligatorios');
 
     // Si ya existe otra cuenta del mismo tipo en el hogar, se recomienda alias (no bloqueante)
     const cuenta = await prisma.cuentaServicio.create({
-      data: { hogarId: req.params.hogarId, tipo, empresa, numeroCuenta, alias, pagoAutomatico: !!pagoAutomatico },
+      data: { hogarId: req.params.hogarId, tipo, empresa, numeroCuenta, alias },
     });
 
     // Si venimos del flujo de Agua/Veolia Sabana, ya se consultó la factura
@@ -90,10 +90,10 @@ router.patch('/:id', requireVerified, async (req, res, next) => {
     if (!cuenta) throw new ApiError(404, 'Cuenta no encontrada');
     await verificarAccesoHogar(cuenta.hogarId, req.usuario.id, ['DUENO', 'PUEDE_PAGAR']);
 
-    const { alias, pagoAutomatico } = req.body;
+    const { alias } = req.body;
     const actualizada = await prisma.cuentaServicio.update({
       where: { id: req.params.id },
-      data: { alias, pagoAutomatico },
+      data: { alias },
     });
     res.json(actualizada);
   } catch (err) {

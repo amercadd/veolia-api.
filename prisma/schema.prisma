@@ -81,7 +81,6 @@ model CuentaServicio {
   empresa        String
   numeroCuenta   String
   alias          String?
-  pagoAutomatico Boolean      @default(false)
   createdAt      DateTime     @default(now())
 
   hogar Hogar  @relation(fields: [hogarId], references: [id], onDelete: Cascade)
